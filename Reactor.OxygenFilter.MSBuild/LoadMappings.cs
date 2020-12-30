@@ -23,6 +23,7 @@ namespace Reactor.OxygenFilter.MSBuild
                 return true;
             }
 
+            Directory.CreateDirectory(Context.TempPath);
             var file = Path.Combine(Context.TempPath, Mappings.Replace("/", "_") + $"-{TargetGamePlatform.ToLower()}" + ".json");
 
             if (File.Exists(file))
