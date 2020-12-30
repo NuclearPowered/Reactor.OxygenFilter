@@ -1,0 +1,3 @@
+[submodule "Reactor.Greenhouse/Mappings"]
+	path = Reactor.Greenhouse/Mappings
+	url = https://github.com/NuclearPowered/Mappings

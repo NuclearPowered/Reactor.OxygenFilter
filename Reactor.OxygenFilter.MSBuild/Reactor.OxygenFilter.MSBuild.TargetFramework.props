@@ -1,0 +1,48 @@
+<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+    <PropertyGroup>
+        <IsNetCoreApp Condition="$(MSBuildRuntimeType) == 'Core'">true</IsNetCoreApp>
+        <IsNetCoreApp Condition="$(IsNetCoreApp) == ''">false</IsNetCoreApp>
+        <TaskFolder Condition="$(IsNetCoreApp)">netstandard2.1</TaskFolder>
+        <TaskFolder Condition="!$(IsNetCoreApp)">net472</TaskFolder>
+        <TaskAssembly>$(MSBuildThisFileDirectory)..\lib\$(TaskFolder)\Reactor.OxygenFilter.MSBuild.dll</TaskAssembly>
+    </PropertyGroup>
+
+    <UsingTask TaskName="LoadMappings" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="GenerateReferences" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="Reobfuscate" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="Deobfuscate" AssemblyFile="$(TaskAssembly)" />
+
+    <Target Name="LoadMappings">
+        <LoadMappings TargetGamePlatform="$(TargetGamePlatform)" Mappings="$(Mappings)">
+            <Output TaskParameter="MappingsJson" PropertyName="MappingsJson" />
+        </LoadMappings>
+    </Target>
+
+    <Target Name="GenerateReferences" BeforeTargets="PrepareForBuild" DependsOnTargets="LoadMappings">
+        <GenerateReferences AmongUs="$(AmongUs)" Mappings="$(MappingsJson)">
+            <Output TaskParameter="ReferencesPath" PropertyName="ReferencesPath" />
+        </GenerateReferences>
+
+        <ItemGroup>
+            <Reference Include="$(ReferencesPath)\*.dll" />
+
+            <Reference Include="$(AmongUs)\BepInEx\unhollowed\*.dll" />
+            <Reference Remove="$(AmongUs)\BepInEx\unhollowed\netstandard.dll;$(AmongUs)\BepInEx\unhollowed\Assembly-CSharp.dll" />
+            <Reference Include="$(AmongUs)\BepInEx\core\*.dll" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="Deobfuscate" AfterTargets="GenerateReferences">
+        <Deobfuscate AmongUs="$(AmongUs)" Input="@(Deobfuscate)" Mappings="$(MappingsJson)">
+            <Output TaskParameter="Deobfuscated" PropertyName="Deobfuscated" />
+        </Deobfuscate>
+
+        <ItemGroup>
+            <Reference Include="$(Deobfuscated)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="Reobfuscate" AfterTargets="Build">
+        <Reobfuscate Input="$(ProjectDir)$(OutputPath)$(AssemblyName).dll" ReferencedAssemblies="@(ReferencePath)" />
+    </Target>
+</Project>

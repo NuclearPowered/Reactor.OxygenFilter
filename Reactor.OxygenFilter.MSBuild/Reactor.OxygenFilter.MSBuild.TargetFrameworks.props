@@ -1,0 +1,3 @@
+<Project>
+    <Import Project="..\build\Reactor.OxygenFilter.MSBuild.props" />
+</Project>

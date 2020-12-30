@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
+        <Version>0.1.0</Version>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/NuclearPowered/Reactor.OxygenFilter</RepositoryUrl>
+        <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+        <Description>Library for using Reactor.OxygenFilter with msbuild</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Build.Framework" Version="16.8.0" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.8.0" />
+
+        <ProjectReference Include="..\Reactor.OxygenFilter\Reactor.OxygenFilter.csproj" />
+        <PackageReference Include="js6pak.Il2CppDumper" Version="6.4.20" />
+        <PackageReference Include="NuclearPowered.AssemblyUnhollower" Version="0.4.12" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
+        <Reference Include="System.Net.Http" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Reactor.OxygenFilter.MSBuild.TargetFramework.props" Pack="true" PackagePath="build\Reactor.OxygenFilter.MSBuild.props" />
+        <Content Include="Reactor.OxygenFilter.MSBuild.TargetFrameworks.props" Pack="true" PackagePath="buildMultiTargeting\Reactor.OxygenFilter.MSBuild.props" />
+    </ItemGroup>
+
+    <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <ItemGroup>
+            <_PackageFiles Include="bin\$(Configuration)\*\Reactor.OxygenFilter.dll;bin\$(Configuration)\*\Newtonsoft.Json.dll;bin\$(Configuration)\*\Il2CppDumper.dll;bin\$(Configuration)\*\AssemblyUnhollower.dll;bin\$(Configuration)\*\Unhollower*Lib.dll;bin\$(Configuration)\*\Iced.dll;bin\$(Configuration)\*\Mono.*.dll">
+                <PackagePath>lib%(RecursiveDir)</PackagePath>
+                <Visible>false</Visible>
+                <BuildAction>Content</BuildAction>
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+</Project>

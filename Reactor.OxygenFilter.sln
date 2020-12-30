@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reactor.OxygenFilter", "Reactor.OxygenFilter\Reactor.OxygenFilter.csproj", "{D32CB975-7C2A-495F-8D6A-2955ADF684D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reactor.Greenhouse", "Reactor.Greenhouse\Reactor.Greenhouse.csproj", "{AF5C3614-4FC9-4D28-BA58-1B9103B5BAB1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reactor.OxygenFilter.MSBuild", "Reactor.OxygenFilter.MSBuild\Reactor.OxygenFilter.MSBuild.csproj", "{C65EE22A-784F-4B6A-974A-BA27418235E5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D32CB975-7C2A-495F-8D6A-2955ADF684D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D32CB975-7C2A-495F-8D6A-2955ADF684D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D32CB975-7C2A-495F-8D6A-2955ADF684D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D32CB975-7C2A-495F-8D6A-2955ADF684D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF5C3614-4FC9-4D28-BA58-1B9103B5BAB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF5C3614-4FC9-4D28-BA58-1B9103B5BAB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF5C3614-4FC9-4D28-BA58-1B9103B5BAB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF5C3614-4FC9-4D28-BA58-1B9103B5BAB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C65EE22A-784F-4B6A-974A-BA27418235E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C65EE22A-784F-4B6A-974A-BA27418235E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C65EE22A-784F-4B6A-974A-BA27418235E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C65EE22A-784F-4B6A-974A-BA27418235E5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal
