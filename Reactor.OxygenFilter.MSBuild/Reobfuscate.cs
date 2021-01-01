@@ -30,7 +30,10 @@ namespace Reactor.OxygenFilter.MSBuild
             using var stream = File.Open(Input, FileMode.Open, FileAccess.ReadWrite);
             var resolver = new DefaultAssemblyResolver();
 
-            foreach (var directory in ReferencedAssemblies.Select(Path.GetDirectoryName).Distinct())
+            foreach (var directory in ReferencedAssemblies
+                .Select(Path.GetDirectoryName)
+                .Distinct()
+                .OrderBy(x => x.EndsWith("unhollowed"))) // workaround for mono.cecil picking netstandard.dll from unhollowed instead of sdk
             {
                 resolver.AddSearchDirectory(directory);
             }
