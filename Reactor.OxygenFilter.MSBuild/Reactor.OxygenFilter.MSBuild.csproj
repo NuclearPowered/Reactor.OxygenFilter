@@ -4,7 +4,7 @@
         <LangVersion>latest</LangVersion>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
-        <Version>0.1.1</Version>
+        <Version>0.1.2</Version>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/NuclearPowered/Reactor.OxygenFilter</RepositoryUrl>
         <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
@@ -31,7 +31,7 @@
 
     <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
         <ItemGroup>
-            <_PackageFiles Include="bin\$(Configuration)\*\Reactor.OxygenFilter.dll;bin\$(Configuration)\*\Newtonsoft.Json.dll;bin\$(Configuration)\*\Il2CppDumper.dll;bin\$(Configuration)\*\AssemblyUnhollower.dll;bin\$(Configuration)\*\Unhollower*Lib.dll;bin\$(Configuration)\*\Iced.dll;bin\$(Configuration)\*\Mono.*.dll">
+            <_PackageFiles Include="bin\$(Configuration)\*\Reactor.OxygenFilter.dll;bin\$(Configuration)\*\Newtonsoft.Json.dll;bin\$(Configuration)\*\Il2CppDumper.dll;bin\$(Configuration)\*\AssemblyUnhollower.*;bin\$(Configuration)\*\Unhollower*Lib.dll;bin\$(Configuration)\*\Iced.dll;bin\$(Configuration)\*\Mono.*.dll">
                 <PackagePath>lib%(RecursiveDir)</PackagePath>
                 <Visible>false</Visible>
                 <BuildAction>Content</BuildAction>

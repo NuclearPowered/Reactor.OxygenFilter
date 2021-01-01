@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Net.Http;
 using Microsoft.Build.Framework;
@@ -23,8 +24,13 @@ namespace Reactor.OxygenFilter.MSBuild
                 return true;
             }
 
-            Directory.CreateDirectory(Context.TempPath);
-            var file = Path.Combine(Context.TempPath, Mappings.Replace("/", "_") + $"-{TargetGamePlatform.ToLower()}" + ".json");
+            var split = Mappings.Split(':');
+            var repo = split[0];
+            var version = split[1];
+
+            var directory = Path.Combine(Context.TempPath, repo.Replace("/", "_"), version);
+            Directory.CreateDirectory(directory);
+            var file = Path.Combine(directory, $"{TargetGamePlatform.ToLower()}.json");
 
             if (File.Exists(file))
             {
@@ -32,15 +38,19 @@ namespace Reactor.OxygenFilter.MSBuild
                 return true;
             }
 
-            var split = Mappings.Split(':');
-            var repo = split[0];
-            var version = split[1];
-
             var httpClient = new HttpClient();
             var json = httpClient.GetStringAsync($"https://github.com/{repo}/releases/download/{version}/{TargetGamePlatform.ToLower()}.json").GetAwaiter().GetResult();
 
             MappingsJson = json;
-            File.WriteAllText(file, json);
+
+            try
+            {
+                File.WriteAllText(file, json);
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning("Failed to cache " + file + "\n" + e);
+            }
 
             return true;
         }

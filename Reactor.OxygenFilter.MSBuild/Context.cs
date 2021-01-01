@@ -7,7 +7,8 @@ namespace Reactor.OxygenFilter.MSBuild
 {
     public static class Context
     {
-        public static string DataPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".reactor");
+        // Path#Combine is borken on visual studio
+        public static string DataPath { get; } = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + Path.DirectorySeparatorChar + ".reactor";
         public static string TempPath { get; } = Path.Combine(DataPath, "temp");
 
         public static string ComputeHash(FileInfo file)
