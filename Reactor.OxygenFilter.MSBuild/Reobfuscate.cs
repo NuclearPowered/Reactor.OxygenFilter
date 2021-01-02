@@ -12,6 +12,9 @@ namespace Reactor.OxygenFilter.MSBuild
     public class Reobfuscate : Task
     {
         [Required]
+        public string AmongUs { get; set; }
+
+        [Required]
         public string Input { get; set; }
 
         [Required]
@@ -30,13 +33,23 @@ namespace Reactor.OxygenFilter.MSBuild
             using var stream = File.Open(Input, FileMode.Open, FileAccess.ReadWrite);
             var resolver = new DefaultAssemblyResolver();
 
-            foreach (var directory in ReferencedAssemblies
-                .Select(Path.GetDirectoryName)
-                .Distinct()
-                .OrderBy(x => x.EndsWith("unhollowed"))) // workaround for mono.cecil picking netstandard.dll from unhollowed instead of sdk
+            resolver.ResolveFailure += (_, reference) =>
             {
-                resolver.AddSearchDirectory(directory);
-            }
+                foreach (var referencedAssembly in ReferencedAssemblies)
+                {
+                    if (Path.GetFileNameWithoutExtension(referencedAssembly) == reference.Name)
+                    {
+                        var assemblyDefinition = AssemblyDefinition.ReadAssembly(referencedAssembly);
+
+                        if (assemblyDefinition.Name.FullName == reference.FullName)
+                        {
+                            return assemblyDefinition;
+                        }
+                    }
+                }
+
+                return null;
+            };
 
             using var moduleDefinition = ModuleDefinition.ReadModule(stream, new ReaderParameters { AssemblyResolver = resolver });
             var toObfuscate = new Dictionary<MemberReference, string>();
@@ -153,6 +166,8 @@ namespace Reactor.OxygenFilter.MSBuild
                 }
             }
 
+            var obfuscatedAssembly = ModuleDefinition.ReadModule(Path.Combine(AmongUs, "BepInEx", "unhollowed", "Assembly-CSharp.dll"));
+
             // fix generic methods
             foreach (var methodDefinition in moduleDefinition.GetAllTypes().SelectMany(x => x.Methods))
             {
@@ -172,8 +187,6 @@ namespace Reactor.OxygenFilter.MSBuild
                         {
                             // get same type from obfuscated assembly
 
-                            var assemblyDefinition = resolver.Resolve(new AssemblyNameDefinition("Assembly-CSharp", null));
-
                             var hierarchy = new List<TypeDefinition>();
                             var type = deobfuscatedCall.DeclaringType;
 
@@ -183,7 +196,7 @@ namespace Reactor.OxygenFilter.MSBuild
                                 type = type.DeclaringType;
                             }
 
-                            var typeDefinition = assemblyDefinition.MainModule.GetType(GetObfuscated(hierarchy.First()));
+                            var typeDefinition = obfuscatedAssembly.GetType(GetObfuscated(hierarchy.First()));
 
                             foreach (var element in hierarchy.Skip(1))
                             {
