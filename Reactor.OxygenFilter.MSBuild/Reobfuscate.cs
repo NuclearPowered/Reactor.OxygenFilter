@@ -33,6 +33,8 @@ namespace Reactor.OxygenFilter.MSBuild
             using var stream = File.Open(Input, FileMode.Open, FileAccess.ReadWrite);
             var resolver = new DefaultAssemblyResolver();
 
+            var obfuscatedAssembly = AssemblyDefinition.ReadAssembly(Path.Combine(AmongUs, "BepInEx", "unhollowed", "Assembly-CSharp.dll"));
+
             resolver.ResolveFailure += (_, reference) =>
             {
                 foreach (var referencedAssembly in ReferencedAssemblies)
@@ -46,6 +48,11 @@ namespace Reactor.OxygenFilter.MSBuild
                             return assemblyDefinition;
                         }
                     }
+                }
+
+                if (reference.FullName == obfuscatedAssembly.Name.FullName)
+                {
+                    return obfuscatedAssembly;
                 }
 
                 return null;
@@ -166,8 +173,6 @@ namespace Reactor.OxygenFilter.MSBuild
                 }
             }
 
-            var obfuscatedAssembly = ModuleDefinition.ReadModule(Path.Combine(AmongUs, "BepInEx", "unhollowed", "Assembly-CSharp.dll"));
-
             // fix generic methods
             foreach (var methodDefinition in moduleDefinition.GetAllTypes().SelectMany(x => x.Methods))
             {
@@ -196,11 +201,11 @@ namespace Reactor.OxygenFilter.MSBuild
                                 type = type.DeclaringType;
                             }
 
-                            var typeDefinition = obfuscatedAssembly.GetType(GetObfuscated(hierarchy.First()));
+                            var typeDefinition = obfuscatedAssembly.MainModule.GetType(GetObfuscated(hierarchy.First()) ?? hierarchy.First().FullName);
 
                             foreach (var element in hierarchy.Skip(1))
                             {
-                                typeDefinition = typeDefinition.NestedTypes.Single(x => x.Name == GetObfuscated(element));
+                                typeDefinition = typeDefinition.NestedTypes.Single(x => x.Name == (GetObfuscated(element) ?? element.Name));
                             }
 
                             // get same method from obfuscated assembly
