@@ -12,6 +12,9 @@ namespace Reactor.OxygenFilter.MSBuild
     public class Reobfuscate : Task
     {
         [Required]
+        public string GameVersion { get; set; }
+
+        [Required]
         public string AmongUs { get; set; }
 
         [Required]
@@ -35,18 +38,15 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var obfuscatedAssembly = AssemblyDefinition.ReadAssembly(Path.Combine(AmongUs, "BepInEx", "unhollowed", "Assembly-CSharp.dll"));
 
+            var referencedAssemblies = ReferencedAssemblies.Select(AssemblyDefinition.ReadAssembly).ToArray();
+
             resolver.ResolveFailure += (_, reference) =>
             {
-                foreach (var referencedAssembly in ReferencedAssemblies)
+                foreach (var referencedAssembly in referencedAssemblies)
                 {
-                    if (Path.GetFileNameWithoutExtension(referencedAssembly) == reference.Name)
+                    if (referencedAssembly.Name.FullName == reference.FullName)
                     {
-                        var assemblyDefinition = AssemblyDefinition.ReadAssembly(referencedAssembly);
-
-                        if (assemblyDefinition.Name.FullName == reference.FullName)
-                        {
-                            return assemblyDefinition;
-                        }
+                        return referencedAssembly;
                     }
                 }
 
@@ -258,7 +258,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var outputDirectory = Path.Combine(Path.GetDirectoryName(Input), "reobfuscated");
             Directory.CreateDirectory(outputDirectory);
-            moduleDefinition.Write(Path.Combine(outputDirectory, Path.GetFileName(Input)));
+            moduleDefinition.Write(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(Input) + $"-{GameVersion}.dll"));
 
             return true;
         }

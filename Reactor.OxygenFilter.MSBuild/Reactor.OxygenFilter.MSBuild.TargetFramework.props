@@ -18,7 +18,7 @@
     </Target>
 
     <Target Name="LoadMappings">
-        <LoadMappings TargetGamePlatform="$(TargetGamePlatform)" Mappings="$(Mappings)">
+        <LoadMappings GameVersion="$(GameVersion)" Mappings="$(Mappings)">
             <Output TaskParameter="MappingsJson" PropertyName="MappingsJson" />
         </LoadMappings>
     </Target>
@@ -48,6 +48,6 @@
     </Target>
 
     <Target Name="Reobfuscate" AfterTargets="Build">
-        <Reobfuscate AmongUs="$(AmongUs)" Input="$(ProjectDir)$(OutputPath)$(AssemblyName).dll" ReferencedAssemblies="@(ReferencePath)" />
+        <Reobfuscate GameVersion="$(GameVersion)" AmongUs="$(AmongUs)" Input="$(ProjectDir)$(OutputPath)$(AssemblyName).dll" ReferencedAssemblies="@(ReferencePath)" />
     </Target>
 </Project>

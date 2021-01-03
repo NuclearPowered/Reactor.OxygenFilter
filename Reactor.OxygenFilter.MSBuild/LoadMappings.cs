@@ -8,7 +8,8 @@ namespace Reactor.OxygenFilter.MSBuild
 {
     public class LoadMappings : Task
     {
-        public string TargetGamePlatform { get; set; } = "Steam";
+        [Required]
+        public string GameVersion { get; set; }
 
         [Required]
         public string Mappings { get; set; }
@@ -30,7 +31,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var directory = Path.Combine(Context.TempPath, repo.Replace("/", "_"), version);
             Directory.CreateDirectory(directory);
-            var file = Path.Combine(directory, $"{TargetGamePlatform.ToLower()}.json");
+            var file = Path.Combine(directory, $"{GameVersion}.json");
 
             if (File.Exists(file))
             {
@@ -39,7 +40,7 @@ namespace Reactor.OxygenFilter.MSBuild
             }
 
             var httpClient = new HttpClient();
-            var json = httpClient.GetStringAsync($"https://github.com/{repo}/releases/download/{version}/{TargetGamePlatform.ToLower()}.json").GetAwaiter().GetResult();
+            var json = httpClient.GetStringAsync($"https://github.com/{repo}/releases/download/{version}/{GameVersion}.json").GetAwaiter().GetResult();
 
             MappingsJson = json;
 
