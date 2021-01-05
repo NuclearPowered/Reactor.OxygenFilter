@@ -31,20 +31,11 @@ namespace Reactor.Greenhouse
             return rootCommand.InvokeAsync(args);
         }
 
-        public static async Task<int> GenerateAsync(bool steam, bool itch)
+        public static async Task GenerateAsync(bool steam, bool itch)
         {
             var gameManager = new GameManager();
 
-            try
-            {
-                await gameManager.SetupAsync(steam, itch);
-            }
-            catch (ProviderConnectionException e)
-            {
-                Console.WriteLine($"Error downloading version : {e.Message}");
-                return 1;
-            }
-
+            await gameManager.SetupAsync(steam, itch);
 
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
@@ -57,6 +48,12 @@ namespace Reactor.Greenhouse
             Console.WriteLine($"Generating mappings from {gameManager.PreObfuscation.Name} ({gameManager.PreObfuscation.Version})");
             using var old = ModuleDefinition.ReadModule(File.OpenRead(gameManager.PreObfuscation.Dll));
 
+            if (!steam && !itch)
+            {
+                Console.WriteLine("No game providers used! (use --help for more info)");
+                return;
+            }
+
             if (steam)
             {
                 await GenerateAsync(gameManager.Steam, old);
@@ -66,8 +63,6 @@ namespace Reactor.Greenhouse
             {
                 await GenerateAsync(gameManager.Itch, old);
             }
-
-            return 0;
         }
 
         private static async Task GenerateAsync(Game game, ModuleDefinition old)

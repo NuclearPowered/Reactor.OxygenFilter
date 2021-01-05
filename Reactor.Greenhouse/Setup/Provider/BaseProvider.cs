@@ -12,10 +12,13 @@ namespace Reactor.Greenhouse.Setup.Provider
         public abstract bool IsUpdateNeeded();
     }
 
-    public abstract class ProviderConnectionException : Exception
+    public class ProviderConnectionException : Exception
     {
-        protected ProviderConnectionException(string message) : base(message)
+        public BaseProvider Provider { get; }
+
+        public ProviderConnectionException(BaseProvider provider, string message) : base(message)
         {
+            Provider = provider;
         }
     }
 }
