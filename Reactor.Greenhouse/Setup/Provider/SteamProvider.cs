@@ -67,7 +67,10 @@ namespace Reactor.Greenhouse.Setup.Provider
             if (environmentVariable != null)
             {
                 var split = environmentVariable.Split(":");
-                ContentDownloader.InitializeSteam3(split[0], split[1]);
+                if (!ContentDownloader.InitializeSteam3(split[0], split[1]))
+                {
+                    throw new ProviderConnectionException(this, "Incorrect credentials.");
+                }
             }
             else
             {
@@ -85,7 +88,15 @@ namespace Reactor.Greenhouse.Setup.Provider
                     Console.WriteLine();
                 }
 
-                ContentDownloader.InitializeSteam3(username, password);
+                if (!ContentDownloader.InitializeSteam3(username, password))
+                {
+                    throw new ProviderConnectionException(this, "Incorrect credentials.");
+                }
+            }
+
+            if (ContentDownloader.steam3 == null || !ContentDownloader.steam3.bConnected)
+            {
+                throw new ProviderConnectionException(this, "Unable to initialize Steam3 session.");
             }
 
             ContentDownloader.Config.UsingFileList = true;

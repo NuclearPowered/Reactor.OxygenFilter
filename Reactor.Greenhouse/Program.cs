@@ -11,6 +11,7 @@ using Mono.Cecil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Reactor.Greenhouse.Setup;
+using Reactor.Greenhouse.Setup.Provider;
 using Reactor.OxygenFilter;
 
 namespace Reactor.Greenhouse
@@ -33,6 +34,7 @@ namespace Reactor.Greenhouse
         public static async Task GenerateAsync(bool steam, bool itch)
         {
             var gameManager = new GameManager();
+
             await gameManager.SetupAsync(steam, itch);
 
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
@@ -45,6 +47,12 @@ namespace Reactor.Greenhouse
 
             Console.WriteLine($"Generating mappings from {gameManager.PreObfuscation.Name} ({gameManager.PreObfuscation.Version})");
             using var old = ModuleDefinition.ReadModule(File.OpenRead(gameManager.PreObfuscation.Dll));
+
+            if (!steam && !itch)
+            {
+                Console.WriteLine("No game providers used! (use --help for more info)");
+                return;
+            }
 
             if (steam)
             {

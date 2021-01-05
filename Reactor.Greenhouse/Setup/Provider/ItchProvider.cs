@@ -41,7 +41,6 @@ namespace Reactor.Greenhouse.Setup.Provider
 
                 Console.Write("itch.io password: ");
                 Password = Util.ReadPassword();
-
                 Console.WriteLine();
             }
         }
@@ -63,7 +62,7 @@ namespace Reactor.Greenhouse.Setup.Provider
 
             if (!loginResponse.IsSuccessStatusCode || (await loginResponse.Content.ReadAsStringAsync()).Contains("Errors"))
             {
-                throw new Exception("itch.io authentication failed");
+                throw new ProviderConnectionException(this, "Authentication failed");
             }
 
             Console.WriteLine("Logged into itch.io");
