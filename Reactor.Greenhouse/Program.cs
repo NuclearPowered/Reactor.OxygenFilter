@@ -11,6 +11,7 @@ using Mono.Cecil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Reactor.Greenhouse.Setup;
+using Reactor.Greenhouse.Setup.Provider;
 using Reactor.OxygenFilter;
 
 namespace Reactor.Greenhouse
@@ -30,10 +31,20 @@ namespace Reactor.Greenhouse
             return rootCommand.InvokeAsync(args);
         }
 
-        public static async Task GenerateAsync(bool steam, bool itch)
+        public static async Task<int> GenerateAsync(bool steam, bool itch)
         {
             var gameManager = new GameManager();
-            await gameManager.SetupAsync(steam, itch);
+
+            try
+            {
+                await gameManager.SetupAsync(steam, itch);
+            }
+            catch (ProviderConnectionException e)
+            {
+                Console.WriteLine($"Error downloading version : {e.Message}");
+                return 1;
+            }
+
 
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
@@ -55,6 +66,8 @@ namespace Reactor.Greenhouse
             {
                 await GenerateAsync(gameManager.Itch, old);
             }
+
+            return 0;
         }
 
         private static async Task GenerateAsync(Game game, ModuleDefinition old)

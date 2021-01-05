@@ -67,7 +67,15 @@ namespace Reactor.Greenhouse.Setup.Provider
             if (environmentVariable != null)
             {
                 var split = environmentVariable.Split(":");
-                ContentDownloader.InitializeSteam3(split[0], split[1]);
+                if(!ContentDownloader.InitializeSteam3(split[0], split[1]))
+                {
+                    throw new SteamProviderConnectionException("Wrong password");
+                }
+
+                if (ContentDownloader.steam3 == null || !ContentDownloader.steam3.bConnected)
+                {
+                    throw new SteamProviderConnectionException("Unable to initialize Steam");
+                }
             }
             else
             {
@@ -85,7 +93,11 @@ namespace Reactor.Greenhouse.Setup.Provider
                     Console.WriteLine();
                 }
 
-                ContentDownloader.InitializeSteam3(username, password);
+                if (!ContentDownloader.InitializeSteam3(username, password))
+                {
+                    throw new SteamProviderConnectionException("Unable to initialize Steam");
+                }
+
             }
 
             ContentDownloader.Config.UsingFileList = true;
@@ -104,6 +116,14 @@ namespace Reactor.Greenhouse.Setup.Provider
         {
             ContentDownloader.Config.InstallDirectory = Game.Path;
             return ContentDownloader.DownloadAppAsync(AppId, DepotId, IsPreObfuscation ? PreObfuscationManifest : ContentDownloader.INVALID_MANIFEST_ID);
+        }
+    }
+
+    public class SteamProviderConnectionException : ProviderConnectionException
+    {
+        public SteamProviderConnectionException(string message) : base(message)
+        {
+           
         }
     }
 }
