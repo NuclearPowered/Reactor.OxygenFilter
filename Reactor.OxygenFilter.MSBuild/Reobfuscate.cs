@@ -99,29 +99,41 @@ namespace Reactor.OxygenFilter.MSBuild
 
             foreach (var type in moduleDefinition.GetAllTypes())
             {
+                void ReobfuscateType(TypeReference t)
+                {
+                    while (t != null)
+                    {
+                        var obfuscated = GetObfuscated(t.Resolve());
+
+                        if (obfuscated != null)
+                        {
+                            toObfuscate[t] = obfuscated;
+                        }
+
+                        t = t.DeclaringType;
+                    }
+                }
+
                 foreach (var customAttribute in type.CustomAttributes)
                 {
                     TypeReference lastType = null;
 
                     foreach (var argument in customAttribute.ConstructorArguments.ToList())
                     {
-                        if (argument.Type.FullName == "System.Type")
+                        if (argument.Type.FullName == "System.Type[]")
+                        {
+                            foreach (var nestedArgument in (CustomAttributeArgument[]) argument.Value)
+                            {
+                                if (nestedArgument.Type.FullName == "System.Type")
+                                {
+                                    ReobfuscateType((TypeReference) nestedArgument.Value);
+                                }
+                            }
+                        }
+                        else if (argument.Type.FullName == "System.Type")
                         {
                             lastType = (TypeReference) argument.Value;
-
-                            var t = lastType;
-
-                            while (t != null)
-                            {
-                                var obfuscated = GetObfuscated(t.Resolve());
-
-                                if (obfuscated != null)
-                                {
-                                    toObfuscate[t] = obfuscated;
-                                }
-
-                                t = t.DeclaringType;
-                            }
+                            ReobfuscateType(lastType);
                         }
                         else
                         {
