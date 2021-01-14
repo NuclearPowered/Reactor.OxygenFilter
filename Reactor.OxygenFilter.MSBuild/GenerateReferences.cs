@@ -79,15 +79,13 @@ namespace Reactor.OxygenFilter.MSBuild
             UnhollowerBaseLib.LogSupport.WarningHandler += s => Log.LogWarning(s);
             UnhollowerBaseLib.LogSupport.ErrorHandler += s => Log.LogError(s);
 
-            var unityBaseLibDir = Path.Combine(AmongUs, "BepInEx", "unhollowed", "base");
-
             var unhollowerOptions = new AssemblyUnhollower.UnhollowerOptions
             {
                 GameAssemblyPath = gameAssemblyPath,
                 MscorlibPath = Path.Combine(AmongUs, "mono", "Managed", "mscorlib.dll"),
                 SourceDir = Path.Combine(Context.TempPath, "DummyDll"),
                 OutputDir = Path.Combine(Context.TempPath, "unhollowed"),
-                UnityBaseLibsDir = unityBaseLibDir,
+                UnityBaseLibsDir = Path.Combine(AmongUs, "BepInEx", "unity-libs"),
                 NoCopyUnhollowerLibs = true
             };
 
