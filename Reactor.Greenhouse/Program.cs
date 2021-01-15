@@ -83,7 +83,7 @@ namespace Reactor.Greenhouse
             generated.Compile(moduleDef);
 
             Directory.CreateDirectory(Path.Combine("bin"));
-            await File.WriteAllTextAsync(Path.Combine("bin", game.Name.ToLower() + ".json"), JsonConvert.SerializeObject(generated));
+            await File.WriteAllTextAsync(Path.Combine("bin", version + postfix + ".json"), JsonConvert.SerializeObject(generated));
         }
 
         private static void Apply(Mappings generated, string file)
