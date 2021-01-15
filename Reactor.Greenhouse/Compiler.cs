@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using Reactor.OxygenFilter;
 
 namespace Reactor.Greenhouse
@@ -115,7 +116,7 @@ namespace Reactor.Greenhouse
 
         private static bool TestType(MappedType type, TypeDefinition typeDef, Mappings mappings)
         {
-            return (type.Original.Name == null || type.Original.Name == typeDef.Name) &&
+            return (type.Original.Name == null || type.Original.Name == typeDef.FullName) &&
                    type.Methods.All(method => typeDef.Methods.Any(m => TestMethod(method, typeDef, m, mappings))) &&
                    type.Fields.All(field => typeDef.Fields.Any(f => TestField(field, typeDef, f, mappings))) &&
                    type.Properties.All(property => typeDef.Properties.Any(p => TestProperty(property, typeDef, p, mappings)));
@@ -123,7 +124,7 @@ namespace Reactor.Greenhouse
 
         private static void Compile(this MappedType type, TypeDefinition typeDef, Mappings mappings)
         {
-            type.Original = new OriginalDescriptor { Name = typeDef.Name };
+            type.Original = new OriginalDescriptor { Name = typeDef.FullName };
 
             foreach (var nested in type.Nested)
             {
@@ -133,7 +134,10 @@ namespace Reactor.Greenhouse
                 );
 
                 nested.Compile(nestedDef, mappings);
+                mappings.Types.Add(nested);
             }
+
+            type.Nested.Clear();
 
             foreach (var property in type.Properties)
             {
@@ -180,11 +184,11 @@ namespace Reactor.Greenhouse
 
         public static void Compile(this Mappings mappings, ModuleDefinition moduleDef)
         {
-            foreach (var type in mappings.Types)
+            foreach (var type in mappings.Types.ToList())
             {
                 try
                 {
-                    var typeDef = moduleDef.Types.Single(t => TestType(type, t, mappings));
+                    var typeDef = moduleDef.GetAllTypes().Single(t => TestType(type, t, mappings));
 
                     type.Compile(typeDef, mappings);
                 }

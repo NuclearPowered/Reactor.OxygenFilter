@@ -1,23 +1,102 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using Reactor.OxygenFilter;
 
 namespace Reactor.Greenhouse
 {
     public static class Generator
     {
+        private static TypeAttributes IgnoreVisibility(this TypeAttributes typeAttributes)
+        {
+            return typeAttributes & ~TypeAttributes.VisibilityMask;
+        }
+
         public static Mappings Generate(ModuleDefinition old, ModuleDefinition latest)
         {
+            var matches = new Dictionary<TypeDefinition, SortedList<double, TypeDefinition>>();
+
             var result = new Mappings();
 
-            foreach (var oldType in old.Types)
+            foreach (var oldType in old.GetAllTypes())
             {
                 if (oldType.Name.StartsWith("<") || oldType.Namespace.StartsWith("GoogleMobileAds"))
                     continue;
 
-                void AddType(TypeDefinition type)
+                var list = new SortedList<double, TypeDefinition>(Comparer<double>.Create((x, y) => y.CompareTo(x)));
+                matches[oldType] = list;
+
+                var exact = latest.GetAllTypes().FirstOrDefault(x => x.FullName == oldType.FullName);
+                if (exact != null)
                 {
-                    var mapped = new MappedType(new OriginalDescriptor { Name = type.Name }, oldType.Name);
+                    list.Add(double.MaxValue, exact);
+                    continue;
+                }
+
+                if (oldType.IsEnum)
+                {
+                    var first = oldType.Fields.Select(x => x.Name).ToArray();
+                    var type = latest.GetAllTypes().SingleOrDefault(x => x.IsEnum && x.Fields.Select(f => f.Name).SequenceEqual(first));
+                    if (type != null)
+                    {
+                        list.Add(double.MaxValue, type);
+                    }
+
+                    continue;
+                }
+
+                static bool Test(TypeReference typeReference)
+                {
+                    return typeReference.IsGenericParameter || typeReference.Namespace != string.Empty || !typeReference.Name.IsObfuscated();
+                }
+
+                var methodNames = oldType.GetMethods().Select(x => x.Name).ToArray();
+                var fieldNames = oldType.Fields.Select(x => x.Name).ToArray();
+                var propertyNames = oldType.Properties.Select(x => x.Name).ToArray();
+
+                var methodSignatures = oldType.GetMethods().Where(x => Test(x.ReturnType) && x.Parameters.All(p => Test(p.ParameterType))).Select(x => x.GetSignature()).ToArray();
+                var fieldSignatures = oldType.Fields.Where(x => Test(x.FieldType) && (!x.FieldType.HasGenericParameters || x.FieldType.GenericParameters.All(Test))).Select(x => x.GetSignature()).ToArray();
+
+                var types = latest.GetAllTypes()
+                    .Where(t => t.Attributes.IgnoreVisibility() == oldType.Attributes.IgnoreVisibility())
+                    .ToArray();
+
+                foreach (var t in types)
+                {
+                    var points = 0d;
+                    points += t.GetMethods().Count(m => !m.Name.IsObfuscated() && methodNames.Contains(m.Name));
+                    points += t.Fields.Count(f => !f.Name.IsObfuscated() && fieldNames.Contains(f.Name)) * 2d;
+                    points += t.Properties.Count(p => propertyNames.Contains((p.GetMethod?.Name ?? p.SetMethod.Name).Substring(4))) * 2d;
+
+                    var fieldSignaturesPoints = fieldSignatures.Count(s => t.Fields.Any(f => f.GetSignature().ToString() == s.ToString()));
+                    points += Math.Max(0, fieldSignaturesPoints - Math.Abs(t.Fields.Count - fieldSignaturesPoints)) / 2d;
+
+                    var methodSignaturesPoints = methodSignatures.Count(s => t.GetMethods().Any(m => m.GetSignature().ToString() == s.ToString()));
+                    points += Math.Max(0, methodSignaturesPoints - Math.Abs(t.GetMethods().Count() - methodSignaturesPoints) / 2d) / 2d;
+
+                    if (points != 0)
+                    {
+                        list.TryAdd(points, t);
+                    }
+                }
+            }
+
+            foreach (var (oldType, list) in matches)
+            {
+                foreach (var (points, type) in list)
+                {
+                    if (matches.Where(x => x.Key != oldType).SelectMany(x => x.Value).Any(x => x.Value == type && x.Key > points))
+                    {
+                        continue;
+                    }
+
+                    list.Clear();
+                    list.Add(double.MaxValue, type);
+
+                    var mapped = new MappedType(new OriginalDescriptor { Name = type.FullName }, oldType.Name);
 
                     var i = 0;
                     foreach (var field in type.Fields)
@@ -67,68 +146,12 @@ namespace Reactor.Greenhouse
 
                     if (type.Name == oldType.Name || (!type.Name.IsObfuscated() && !mapped.Fields.Any() && !mapped.Methods.Any()))
                     {
-                        return;
+                        break;
                     }
 
                     result.Types.Add(mapped);
-                }
 
-                var exact = latest.Types.FirstOrDefault(x => x.FullName == oldType.FullName);
-                if (exact != null)
-                {
-                    AddType(exact);
-                    continue;
-                }
-
-                if (oldType.IsEnum)
-                {
-                    var first = oldType.Fields.Select(x => x.Name).ToArray();
-                    var type = latest.Types.SingleOrDefault(x => x.IsEnum && x.Fields.Select(f => f.Name).SequenceEqual(first));
-                    if (type != null)
-                    {
-                        AddType(type);
-                    }
-
-                    continue;
-                }
-
-                static bool Test(TypeReference typeReference)
-                {
-                    return typeReference.IsGenericParameter || typeReference.Namespace != string.Empty || !typeReference.Name.IsObfuscated();
-                }
-
-                var methods = oldType.Methods.Where(x => Test(x.ReturnType) && x.Parameters.All(p => Test(p.ParameterType))).Select(x => x.GetSignature()).ToArray();
-                var fields = oldType.Fields.Where(x => Test(x.FieldType) && (!x.FieldType.HasGenericParameters || x.FieldType.GenericParameters.All(Test))).Select(x => x.GetSignature()).ToArray();
-                var properties = oldType.Properties.Select(x => x.Name).ToArray();
-
-                var types = latest.Types
-                    .Where(t => t.Attributes == oldType.Attributes)
-                    .ToArray();
-
-                TypeDefinition winner = null;
-                var winnerPoints = -1;
-
-                foreach (var t in types)
-                {
-                    var points = 0;
-                    points += t.Properties.Count(p => properties.Contains((p.GetMethod?.Name ?? p.SetMethod.Name).Substring(4)));
-                    points += fields.Count(s => t.Fields.Any(f => f.GetSignature().ToString() == s.ToString()));
-                    points += methods.Count(s => t.Methods.Any(m => m.GetSignature().ToString() == s.ToString()));
-
-                    if (points > winnerPoints)
-                    {
-                        winnerPoints = points;
-                        winner = t;
-                    }
-                    else if (points == winnerPoints)
-                    {
-                        winner = null;
-                    }
-                }
-
-                if (winner != null && winnerPoints > 0)
-                {
-                    AddType(winner);
+                    break;
                 }
             }
 

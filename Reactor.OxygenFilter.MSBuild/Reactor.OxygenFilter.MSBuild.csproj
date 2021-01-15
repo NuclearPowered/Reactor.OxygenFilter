@@ -4,7 +4,7 @@
         <LangVersion>latest</LangVersion>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
-        <Version>0.2.2</Version>
+        <Version>0.2.3</Version>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/NuclearPowered/Reactor.OxygenFilter</RepositoryUrl>
         <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
@@ -17,7 +17,7 @@
 
         <ProjectReference Include="..\Reactor.OxygenFilter\Reactor.OxygenFilter.csproj" />
         <PackageReference Include="js6pak.Il2CppDumper" Version="6.4.20" />
-        <PackageReference Include="NuclearPowered.AssemblyUnhollower" Version="0.4.12" />
+        <PackageReference Include="NuclearPowered.AssemblyUnhollower" Version="0.4.13" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">

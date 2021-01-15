@@ -3,7 +3,7 @@
         <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
 
-        <Version>0.1.0</Version>
+        <Version>0.1.1</Version>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/NuclearPowered/Reactor.OxygenFilter</RepositoryUrl>
         <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>

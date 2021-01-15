@@ -77,13 +77,13 @@ namespace Reactor.Greenhouse
 
             await File.WriteAllTextAsync(Path.Combine("work", version + postfix + ".generated.json"), JsonConvert.SerializeObject(generated, Formatting.Indented));
 
-            Apply(generated, Path.Combine("Mappings", "universal.json"));
-            Apply(generated, Path.Combine("Mappings", version + postfix + ".json"));
+            Apply(generated, Path.Combine("universal.json"));
+            Apply(generated, Path.Combine(version + postfix + ".json"));
 
             generated.Compile(moduleDef);
 
-            Directory.CreateDirectory(Path.Combine("Mappings", "bin"));
-            await File.WriteAllTextAsync(Path.Combine("Mappings", "bin", game.Name.ToLower() + ".json"), JsonConvert.SerializeObject(generated));
+            Directory.CreateDirectory(Path.Combine("bin"));
+            await File.WriteAllTextAsync(Path.Combine("bin", game.Name.ToLower() + ".json"), JsonConvert.SerializeObject(generated));
         }
 
         private static void Apply(Mappings generated, string file)

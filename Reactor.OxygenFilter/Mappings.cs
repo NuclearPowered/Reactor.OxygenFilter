@@ -11,7 +11,7 @@ namespace Reactor.OxygenFilter
 
         public MappedType Find(string name, Func<MappedType, string> predicate)
         {
-            var split = name.Split('.').SelectMany(x => x.Split('+')).ToArray();
+            var split = name.Split('.', '+', '/').ToArray();
 
             if (split.Length > 1)
             {

@@ -143,11 +143,6 @@ namespace Reactor.OxygenFilter
                         }
                     }
                 }
-
-                foreach (var nested in type.Nested)
-                {
-                    MapType(nested, typeDef.NestedTypes.SingleOrDefault(x => x.Name == nested.Original.Name));
-                }
             }
 
             foreach (var type in Mappings.Types)
