@@ -14,14 +14,13 @@ namespace Reactor.OxygenFilter.MSBuild
         [Required]
         public string Mappings { get; set; }
 
-        [Output]
-        public string MappingsJson { get; set; }
-
         public override bool Execute()
         {
+            Context.GameVersion = GameVersion;
+
             if (File.Exists(Mappings))
             {
-                MappingsJson = File.ReadAllText(Mappings);
+                Context.MappingsJson = File.ReadAllText(Mappings);
                 return true;
             }
 
@@ -35,14 +34,14 @@ namespace Reactor.OxygenFilter.MSBuild
 
             if (File.Exists(file))
             {
-                MappingsJson = File.ReadAllText(file);
+                Context.MappingsJson = File.ReadAllText(file);
                 return true;
             }
 
             var httpClient = new HttpClient();
             var json = httpClient.GetStringAsync($"https://github.com/{repo}/releases/download/{version}/{GameVersion}.json").GetAwaiter().GetResult();
 
-            MappingsJson = json;
+            Context.MappingsJson = json;
 
             try
             {

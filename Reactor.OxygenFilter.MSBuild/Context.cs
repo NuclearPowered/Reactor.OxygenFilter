@@ -8,8 +8,13 @@ namespace Reactor.OxygenFilter.MSBuild
     public static class Context
     {
         // Path#Combine is borken on visual studio
-        public static string DataPath { get; } = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + Path.DirectorySeparatorChar + ".reactor";
-        public static string TempPath { get; } = Path.Combine(DataPath, "temp");
+        public static string RootPath { get; } = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + Path.DirectorySeparatorChar + ".reactor";
+        public static string TempPath { get; } = Path.Combine(RootPath, "tmp");
+        public static string DataPath => RootPath + Path.DirectorySeparatorChar + GameVersion;
+        public static string MappedPath => DataPath + Path.DirectorySeparatorChar + ComputeHash(MappingsJson);
+
+        public static string GameVersion { get; internal set; }
+        public static string MappingsJson { get; internal set; }
 
         public static string ComputeHash(FileInfo file)
         {
@@ -18,7 +23,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var hash = md5.ComputeHash(assemblyStream);
 
-            return Encoding.UTF8.GetString(hash);
+            return ByteArrayToString(hash);
         }
 
         public static string ComputeHash(string text)
@@ -27,7 +32,18 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(text));
 
-            return Encoding.UTF8.GetString(hash);
+            return ByteArrayToString(hash);
+        }
+
+        public static string ByteArrayToString(byte[] data)
+        {
+            var builder = new StringBuilder(data.Length * 2);
+            foreach (var b in data)
+            {
+                builder.AppendFormat("{0:x2}", b);
+            }
+
+            return builder.ToString();
         }
     }
 }

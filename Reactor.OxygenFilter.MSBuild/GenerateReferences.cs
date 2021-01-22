@@ -10,31 +10,29 @@ namespace Reactor.OxygenFilter.MSBuild
         [Required]
         public string AmongUs { get; set; }
 
-        [Required]
-        public string Mappings { get; set; }
-
         [Output]
         public string ReferencesPath { get; set; }
 
         public override bool Execute()
         {
-            ReferencesPath = Path.Combine(Context.DataPath, "references");
+            ReferencesPath = Path.Combine(Context.MappedPath, "references");
 
             Directory.CreateDirectory(Context.DataPath);
+            Directory.CreateDirectory(Context.MappedPath);
 
             var skip = true;
 
             var gameAssemblyPath = Path.Combine(AmongUs, "GameAssembly.dll");
             var hash = Context.ComputeHash(new FileInfo(gameAssemblyPath));
-            var hashPath = Path.Combine(Context.DataPath, "GameAssembly.dll.md5");
+            var hashPath = Path.Combine(Context.MappedPath, "GameAssembly.dll.md5");
 
             if (!File.Exists(hashPath) || hash != File.ReadAllText(hashPath))
             {
                 skip = false;
             }
 
-            var mappingsHash = Context.ComputeHash(Mappings);
-            var mappingsHashPath = Path.Combine(Context.DataPath, "mappings.md5");
+            var mappingsHash = Context.ComputeHash(Context.MappingsJson);
+            var mappingsHashPath = Path.Combine(Context.MappedPath, "mappings.md5");
 
             if (!File.Exists(mappingsHashPath) || mappingsHash != File.ReadAllText(mappingsHashPath))
             {
@@ -44,11 +42,6 @@ namespace Reactor.OxygenFilter.MSBuild
             if (skip)
             {
                 return true;
-            }
-
-            if (Directory.Exists(Context.TempPath))
-            {
-                Directory.Delete(Context.TempPath, true);
             }
 
             var dumperConfig = new Il2CppDumper.Config
@@ -62,7 +55,7 @@ namespace Reactor.OxygenFilter.MSBuild
             Il2CppDumper.Il2CppDumper.PerformDump(
                 gameAssemblyPath,
                 Path.Combine(AmongUs, "Among Us_Data", "il2cpp_data", "Metadata", "global-metadata.dat"),
-                Context.TempPath, dumperConfig, _ =>
+                Context.DataPath, dumperConfig, _ =>
                 {
                 }
             );
@@ -71,8 +64,8 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var oxygenFilter = new OxygenFilter();
 
-            var dumpedDll = new FileInfo(Path.Combine(Context.TempPath, "DummyDll", "Assembly-CSharp.dll"));
-            oxygenFilter.Start(Mappings, dumpedDll, dumpedDll);
+            var dumpedDll = new FileInfo(Path.Combine(Context.DataPath, "DummyDll", "Assembly-CSharp.dll"));
+            oxygenFilter.Start(Context.MappingsJson, dumpedDll, dumpedDll);
 
             Log.LogMessage(MessageImportance.High, "Executing Il2CppUnhollower generator");
 
@@ -83,8 +76,8 @@ namespace Reactor.OxygenFilter.MSBuild
             {
                 GameAssemblyPath = gameAssemblyPath,
                 MscorlibPath = Path.Combine(AmongUs, "mono", "Managed", "mscorlib.dll"),
-                SourceDir = Path.Combine(Context.TempPath, "DummyDll"),
-                OutputDir = Path.Combine(Context.TempPath, "unhollowed"),
+                SourceDir = Path.Combine(Context.DataPath, "DummyDll"),
+                OutputDir = Path.Combine(Context.DataPath, "unhollowed"),
                 UnityBaseLibsDir = Path.Combine(AmongUs, "BepInEx", "unity-libs"),
                 NoCopyUnhollowerLibs = true
             };

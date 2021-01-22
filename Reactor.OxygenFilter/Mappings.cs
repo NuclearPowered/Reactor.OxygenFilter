@@ -156,6 +156,16 @@ namespace Reactor.OxygenFilter
             }
         }
 
+        public MappedMember(string original, string mapped) : this(
+            new OriginalDescriptor
+            {
+                Name = original
+            },
+            mapped
+        )
+        {
+        }
+
         public bool Equals(MappedMember obj, bool compareOriginal = true)
         {
             if (obj == null)
@@ -193,6 +203,10 @@ namespace Reactor.OxygenFilter
         }
 
         public MappedType(OriginalDescriptor original, string mapped) : base(original, mapped)
+        {
+        }
+
+        public MappedType(string original, string mapped) : base(original, mapped)
         {
         }
     }

@@ -10,33 +10,24 @@ namespace Reactor.Greenhouse.Setup
     {
         public string WorkPath { get; }
 
-        public Game PreObfuscation { get; }
         public Game Steam { get; }
         public Game Itch { get; }
 
         public GameManager()
         {
             WorkPath = Path.GetFullPath("work");
-            PreObfuscation = new Game(new SteamProvider(true), "preobfuscation", Path.Combine(WorkPath, "preobfuscation"));
             Steam = new Game(new SteamProvider(false), "steam", Path.Combine(WorkPath, "steam"));
             Itch = new Game(new ItchProvider(), "itch", Path.Combine(WorkPath, "itch"));
         }
 
         public async Task SetupAsync(bool setupSteam, bool setupItch)
         {
-            var preObfuscation = PreObfuscation.Provider.IsUpdateNeeded();
             var steam = setupSteam && Steam.Provider.IsUpdateNeeded();
             var itch = setupItch && Itch.Provider.IsUpdateNeeded();
 
-            if (preObfuscation || steam || itch)
+            if (steam || itch)
             {
                 ContentDownloader.ShutdownSteam3();
-
-                if (preObfuscation)
-                {
-                    await PreObfuscation.DownloadAsync();
-                    Console.WriteLine($"Downloaded {nameof(PreObfuscation)} ({PreObfuscation.Version})");
-                }
 
                 if (steam)
                 {
@@ -53,8 +44,6 @@ namespace Reactor.Greenhouse.Setup
 
             ContentDownloader.ShutdownSteam3();
 
-            PreObfuscation.UpdateVersion();
-
             if (setupSteam)
             {
                 Steam.UpdateVersion();
@@ -64,13 +53,6 @@ namespace Reactor.Greenhouse.Setup
             {
                 Itch.UpdateVersion();
             }
-
-            if (PreObfuscation.Version != "2020.9.9")
-            {
-                throw new ArgumentException("Pre obfuscation version is invalid");
-            }
-
-            PreObfuscation.Dump();
 
             if (setupSteam)
             {

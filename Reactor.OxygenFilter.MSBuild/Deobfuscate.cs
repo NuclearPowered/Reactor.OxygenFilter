@@ -17,15 +17,12 @@ namespace Reactor.OxygenFilter.MSBuild
         [Required]
         public string[] Input { get; set; }
 
-        [Required]
-        public string Mappings { get; set; }
-
         [Output]
         public string[] Deobfuscated { get; set; }
 
         public override bool Execute()
         {
-            var path = Path.Combine(Context.DataPath, "mapped");
+            var path = Path.Combine(Context.MappedPath, "mapped");
 
             Directory.CreateDirectory(path);
 
@@ -34,10 +31,10 @@ namespace Reactor.OxygenFilter.MSBuild
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            var mappings = JsonConvert.DeserializeObject<Mappings>(Mappings);
+            var mappings = JsonConvert.DeserializeObject<Mappings>(Context.MappingsJson);
 
             var resolver = new DefaultAssemblyResolver();
-            resolver.AddSearchDirectory(Path.Combine(Context.DataPath, "references"));
+            resolver.AddSearchDirectory(Path.Combine(Context.MappedPath, "references"));
             resolver.AddSearchDirectory(Path.Combine(AmongUs, "BepInEx", "core"));
             resolver.AddSearchDirectory(Path.Combine(AmongUs, "BepInEx", "plugins"));
             resolver.AddSearchDirectory(Path.Combine(AmongUs, "BepInEx", "unhollowed"));

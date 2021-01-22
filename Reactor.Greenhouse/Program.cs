@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Mono.Cecil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Reactor.Greenhouse.Generation;
 using Reactor.Greenhouse.Setup;
 using Reactor.Greenhouse.Setup.Provider;
 using Reactor.OxygenFilter;
@@ -45,8 +46,9 @@ namespace Reactor.Greenhouse
                 ContractResolver = ShouldSerializeContractResolver.Instance,
             };
 
-            Console.WriteLine($"Generating mappings from {gameManager.PreObfuscation.Name} ({gameManager.PreObfuscation.Version})");
-            using var old = ModuleDefinition.ReadModule(File.OpenRead(gameManager.PreObfuscation.Dll));
+            var oldFile = Path.Combine("work", "Assembly-CSharp-2020.12.9s.dll");
+            Console.WriteLine($"Generating mappings from {oldFile}");
+            using var cleanModule = ModuleDefinition.ReadModule(File.OpenRead(oldFile));
 
             if (!steam && !itch)
             {
@@ -56,16 +58,18 @@ namespace Reactor.Greenhouse
 
             if (steam)
             {
-                await GenerateAsync(gameManager.Steam, old);
+                await GenerateAsync(gameManager.Steam, cleanModule);
             }
 
             if (itch)
             {
-                await GenerateAsync(gameManager.Itch, old);
+                await GenerateAsync(gameManager.Itch, cleanModule);
             }
+
+            new OxygenFilter.OxygenFilter().Start(File.ReadAllText(Path.Combine("bin", "2020.12.9s.json")), new FileInfo(gameManager.Steam.Dll), new FileInfo("test.dll"));
         }
 
-        private static async Task GenerateAsync(Game game, ModuleDefinition old)
+        private static async Task GenerateAsync(Game game, ModuleDefinition cleanModule)
         {
             Console.WriteLine($"Compiling mappings for {game.Name} ({game.Version})");
 
@@ -73,7 +77,7 @@ namespace Reactor.Greenhouse
             var version = game.Version;
             var postfix = game.Postfix;
 
-            var generated = Generator.Generate(old, moduleDef);
+            var generated = Generator.Generate(new GenerationContext(cleanModule, moduleDef));
 
             await File.WriteAllTextAsync(Path.Combine("work", version + postfix + ".generated.json"), JsonConvert.SerializeObject(generated, Formatting.Indented));
 

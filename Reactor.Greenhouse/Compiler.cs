@@ -129,7 +129,7 @@ namespace Reactor.Greenhouse
             foreach (var nested in type.Nested)
             {
                 var nestedDef = typeDef.NestedTypes.Single(t =>
-                    TestType(type, t, mappings) &&
+                    TestType(nested, t, mappings) &&
                     nested.Original.Index == null || typeDef.NestedTypes.IndexOf(t) == nested.Original.Index
                 );
 

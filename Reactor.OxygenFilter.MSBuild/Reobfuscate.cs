@@ -12,9 +12,6 @@ namespace Reactor.OxygenFilter.MSBuild
     public class Reobfuscate : Task
     {
         [Required]
-        public string GameVersion { get; set; }
-
-        [Required]
         public string AmongUs { get; set; }
 
         [Required]
@@ -270,7 +267,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var outputDirectory = Path.Combine(Path.GetDirectoryName(Input), "reobfuscated");
             Directory.CreateDirectory(outputDirectory);
-            moduleDefinition.Write(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(Input) + $"-{GameVersion}.dll"));
+            moduleDefinition.Write(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(Input) + $"-{Context.GameVersion}.dll"));
 
             return true;
         }

@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
 
@@ -23,6 +25,16 @@ namespace Reactor.Greenhouse
 
             var offset = attribute.Fields.Single(x => x.Name == "Offset");
             return new System.ComponentModel.UInt32Converter().ConvertFrom(offset) as uint?;
+        }
+
+        private static readonly Stopwatch _stopwatch = new Stopwatch();
+
+        public static TimeSpan Time(this Action action)
+        {
+            _stopwatch.Restart();
+            action();
+            _stopwatch.Stop();
+            return _stopwatch.Elapsed;
         }
     }
 }
