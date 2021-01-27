@@ -12,11 +12,6 @@
     <UsingTask TaskName="Reobfuscate" AssemblyFile="$(TaskAssembly)" />
     <UsingTask TaskName="Deobfuscate" AssemblyFile="$(TaskAssembly)" />
 
-    <Target Name="WarnAboutTargetFramework" BeforeTargets="PrepareForBuild" Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
-        <!-- TODO link to docs explaining why netstandard is better -->
-        <Warning Text="Your project is not targetting netstandard2.1, you probably want to change that." File="$(MSBuildProjectFullPath)" />
-    </Target>
-
     <Target Name="LoadMappings">
         <LoadMappings GameVersion="$(GameVersion)" Mappings="$(Mappings)" />
     </Target>
