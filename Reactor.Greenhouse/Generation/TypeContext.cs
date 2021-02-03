@@ -58,9 +58,12 @@ namespace Reactor.Greenhouse.Generation
 
             foreach (var cleanMethod in CleanType.GetMethods())
             {
+                if (obfuscatedType.GetMethods().Any(x => x.Name == cleanMethod.Name))
+                    continue;
+
                 var matching = new List<MethodDefinition>();
 
-                foreach (var obfuscatedMethod in obfuscatedType.GetMethods())
+                foreach (var obfuscatedMethod in obfuscatedType.GetMethods().Where(x => x.Name.IsObfuscated()))
                 {
                     if (cleanMethod.ReturnType.FullName != obfuscatedMethod.ReturnType.FullName)
                         continue;

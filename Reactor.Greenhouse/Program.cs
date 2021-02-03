@@ -65,8 +65,6 @@ namespace Reactor.Greenhouse
             {
                 await GenerateAsync(gameManager.Itch, cleanModule);
             }
-
-            new OxygenFilter.OxygenFilter().Start(File.ReadAllText(Path.Combine("bin", "2020.12.9s.json")), new FileInfo(gameManager.Steam.Dll), new FileInfo("test.dll"));
         }
 
         private static async Task GenerateAsync(Game game, ModuleDefinition cleanModule)
