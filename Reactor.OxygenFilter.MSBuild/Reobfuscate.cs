@@ -94,7 +94,18 @@ namespace Reactor.OxygenFilter.MSBuild
                 }
             }
 
+            var customAttributeProviders = new List<ICustomAttributeProvider>();
+
             foreach (var type in moduleDefinition.GetAllTypes())
+            {
+                customAttributeProviders.Add(type);
+                customAttributeProviders.AddRange(type.Events);
+                customAttributeProviders.AddRange(type.Fields);
+                customAttributeProviders.AddRange(type.Methods);
+                customAttributeProviders.AddRange(type.Properties);
+            }
+
+            foreach (var customAttributeProvider in customAttributeProviders)
             {
                 void ReobfuscateType(TypeReference t)
                 {
@@ -111,7 +122,7 @@ namespace Reactor.OxygenFilter.MSBuild
                     }
                 }
 
-                foreach (var customAttribute in type.CustomAttributes)
+                foreach (var customAttribute in customAttributeProvider.CustomAttributes)
                 {
                     TypeReference lastType = null;
 

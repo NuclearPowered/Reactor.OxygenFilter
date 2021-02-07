@@ -41,6 +41,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             if (skip)
             {
+                Log.LogMessage("Skipping reference generation");
                 return true;
             }
 

@@ -20,6 +20,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             if (File.Exists(Mappings))
             {
+                Log.LogMessage("Loading mappings from " + Mappings);
                 Context.MappingsJson = File.ReadAllText(Mappings);
                 return true;
             }
@@ -34,9 +35,12 @@ namespace Reactor.OxygenFilter.MSBuild
 
             if (File.Exists(file))
             {
+                Log.LogMessage("Loading mappings from " + file);
                 Context.MappingsJson = File.ReadAllText(file);
                 return true;
             }
+
+            Log.LogMessage("Downloading mappings from " + Mappings);
 
             var httpClient = new HttpClient();
             var json = httpClient.GetStringAsync($"https://github.com/{repo}/releases/download/{version}/{GameVersion}.json").GetAwaiter().GetResult();

@@ -1,4 +1,4 @@
-<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+<Project TreatAsLocalProperty="TaskFolder;TaskAssembly" InitialTargets="Validation">
     <PropertyGroup>
         <IsNetCoreApp Condition="$(MSBuildRuntimeType) == 'Core'">true</IsNetCoreApp>
         <IsNetCoreApp Condition="$(IsNetCoreApp) == ''">false</IsNetCoreApp>
@@ -7,10 +7,22 @@
         <TaskAssembly>$(MSBuildThisFileDirectory)..\lib\$(TaskFolder)\Reactor.OxygenFilter.MSBuild.dll</TaskAssembly>
     </PropertyGroup>
 
+    <PropertyGroup Condition="$(GamePlatform) == ''">
+        <GamePlatform>Steam</GamePlatform>
+    </PropertyGroup>
+
     <UsingTask TaskName="LoadMappings" AssemblyFile="$(TaskAssembly)" />
     <UsingTask TaskName="GenerateReferences" AssemblyFile="$(TaskAssembly)" />
     <UsingTask TaskName="Reobfuscate" AssemblyFile="$(TaskAssembly)" />
     <UsingTask TaskName="Deobfuscate" AssemblyFile="$(TaskAssembly)" />
+
+    <Target Name="Validation">
+        <Error Condition=" !Exists('$(AmongUs)') "
+               Text="Couldn't find game path, make sure to set AmongUs environment variable" />
+
+        <Error Condition=" '$(GameVersion)' == '' "
+               Text="Game version is not set (make sure to set GamePlatform environment variable if you are using reactor template)" />
+    </Target>
 
     <Target Name="WarnAboutTargetFramework" BeforeTargets="PrepareForBuild" Condition=" '$(TargetFramework)' != 'netstandard2.1' ">
         <!-- TODO link to docs explaining why netstandard is better -->

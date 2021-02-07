@@ -54,6 +54,8 @@ namespace Reactor.OxygenFilter.MSBuild
                     continue;
                 }
 
+                Log.LogMessage("Deobfuscating " + input);
+
                 using var stream = File.Open(input, FileMode.Open, FileAccess.Read, FileShare.Read);
 
                 using var moduleDefinition = ModuleDefinition.ReadModule(stream, new ReaderParameters { AssemblyResolver = resolver });
