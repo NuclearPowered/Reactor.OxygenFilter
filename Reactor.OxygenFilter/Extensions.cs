@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Text;
 using Mono.Cecil;
@@ -11,11 +12,29 @@ namespace Reactor.OxygenFilter
             return text.Length == 11 && text.All(char.IsUpper);
         }
 
-        public static string GetSignature(this MethodDefinition methodDefinition)
+        public static string GetSignature(this MethodDefinition methodDefinition, Func<TypeDefinition, string> map = null)
         {
+            map ??= provider => provider.FullName;
+
+            string MapIfResolved(TypeReference typeReference)
+            {
+                TypeDefinition resolved = null;
+
+                try
+                {
+                    resolved = typeReference.Resolve();
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                return resolved != null ? map(resolved) : typeReference.FullName;
+            }
+
             var sb = new StringBuilder();
 
-            sb.Append(methodDefinition.ReturnType.FullName);
+            sb.Append(MapIfResolved(methodDefinition.ReturnType));
             sb.Append(" ");
 
             sb.Append("(");
@@ -31,7 +50,7 @@ namespace Reactor.OxygenFilter
                     if (parameterType is SentinelType)
                         sb.Append("...,");
 
-                    sb.Append(parameterType.FullName);
+                    sb.Append(MapIfResolved(parameterType));
                 }
             }
 

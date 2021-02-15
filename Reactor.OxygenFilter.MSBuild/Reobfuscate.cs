@@ -229,7 +229,8 @@ namespace Reactor.OxygenFilter.MSBuild
                             }
 
                             // get same method from obfuscated assembly
-                            MethodReference definition = typeDefinition.GetMethods().Single(x => x.Name == obfuscated);
+                            var signature = deobfuscatedCall.GetSignature(t => GetObfuscated(t) ?? t.FullName);
+                            MethodReference definition = typeDefinition.GetMethods().Single(x => x.Name == obfuscated && x.GetSignature() == signature);
 
                             // obfuscate generics
                             if (deobfuscatedCallReference is GenericInstanceMethod generic)
