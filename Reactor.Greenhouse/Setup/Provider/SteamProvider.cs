@@ -4,7 +4,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DepotDownloader;
-using SteamKit2;
 
 namespace Reactor.Greenhouse.Setup.Provider
 {
@@ -12,42 +11,36 @@ namespace Reactor.Greenhouse.Setup.Provider
     {
         private const uint AppId = 945360;
         private const uint DepotId = 945361;
-        private const ulong PreObfuscationManifest = 3596575937380717449;
 
-        public bool IsPreObfuscation { get; }
-
-        public SteamProvider(bool isPreObfuscation)
+        private Dictionary<GameVersion, ulong> VersionMap { get; } = new Dictionary<GameVersion, ulong>
         {
-            IsPreObfuscation = isPreObfuscation;
+            [new GameVersion("2019.10.10s")] = 3162069540887216240,
+            [new GameVersion("2020.12.9s")] = 3306639722673334636
+        };
+
+        public ulong Manifest { get; }
+
+        public SteamProvider(GameVersion version) : base(version)
+        {
+            Manifest = VersionMap[version];
         }
 
         public override bool IsUpdateNeeded()
         {
-            DepotConfigStore.LoadFromFile(Path.Combine(Game.Path, ".DepotDownloader", "depot.config"));
-            if (DepotConfigStore.Instance.InstalledManifestIDs.TryGetValue(DepotId, out var installedManifest))
+            try
             {
-                if (IsPreObfuscation)
+                DepotConfigStore.LoadFromFile(Path.Combine(Game.Path, ".DepotDownloader", "depot.config"));
+                if (DepotConfigStore.Instance.InstalledManifestIDs.TryGetValue(DepotId, out var installedManifest))
                 {
-                    if (installedManifest == PreObfuscationManifest)
+                    if (installedManifest == Manifest)
                     {
                         return false;
                     }
                 }
-                else
-                {
-                    if (ContentDownloader.steam3 == null)
-                    {
-                        ContentDownloader.InitializeSteam3();
-                    }
-
-                    ContentDownloader.steam3!.RequestAppInfo(AppId);
-
-                    var depots = ContentDownloader.GetSteam3AppSection(AppId, EAppInfoSection.Depots);
-                    if (installedManifest == depots[DepotId.ToString()]["manifests"][ContentDownloader.DEFAULT_BRANCH].AsUnsignedLong())
-                    {
-                        return false;
-                    }
-                }
+            }
+            finally
+            {
+                ContentDownloader.ShutdownSteam3();
             }
 
             return true;
@@ -114,7 +107,7 @@ namespace Reactor.Greenhouse.Setup.Provider
         public override Task DownloadAsync()
         {
             ContentDownloader.Config.InstallDirectory = Game.Path;
-            return ContentDownloader.DownloadAppAsync(AppId, DepotId, IsPreObfuscation ? PreObfuscationManifest : ContentDownloader.INVALID_MANIFEST_ID);
+            return ContentDownloader.DownloadAppAsync(AppId, DepotId, Manifest);
         }
     }
 }

@@ -6,6 +6,12 @@ namespace Reactor.Greenhouse.Setup.Provider
     public abstract class BaseProvider
     {
         public Game Game { get; internal set; }
+        public GameVersion Version { get; }
+
+        protected BaseProvider(GameVersion version)
+        {
+            Version = version;
+        }
 
         public abstract void Setup();
         public abstract Task DownloadAsync();

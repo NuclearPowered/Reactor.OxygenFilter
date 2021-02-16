@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Mono.Cecil;
 
@@ -35,6 +37,12 @@ namespace Reactor.Greenhouse
             action();
             _stopwatch.Stop();
             return _stopwatch.Elapsed;
+        }
+
+        public static void ForceExtractToFile(this ZipArchiveEntry source, string destinationFileName)
+        {
+            Directory.GetParent(destinationFileName)!.Create();
+            source.ExtractToFile(destinationFileName, true);
         }
     }
 }

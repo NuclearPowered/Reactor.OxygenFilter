@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.CommandLine;
-using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,31 +10,25 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Reactor.Greenhouse.Generation;
 using Reactor.Greenhouse.Setup;
-using Reactor.Greenhouse.Setup.Provider;
 using Reactor.OxygenFilter;
 
 namespace Reactor.Greenhouse
 {
     internal static class Program
     {
-        private static Task<int> Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            var rootCommand = new RootCommand
+            if (!args.Any())
             {
-                new Option<bool>("steam"),
-                new Option<bool>("itch"),
-            };
+                Console.WriteLine("No game versions used!");
+                return;
+            }
 
-            rootCommand.Handler = CommandHandler.Create<bool, bool>(GenerateAsync);
+            var gameVersions = args.Select(x => new GameVersion(x)).ToArray();
 
-            return rootCommand.InvokeAsync(args);
-        }
+            var gameManager = new GameManager(gameVersions);
 
-        public static async Task GenerateAsync(bool steam, bool itch)
-        {
-            var gameManager = new GameManager();
-
-            await gameManager.SetupAsync(steam, itch);
+            await gameManager.SetupAsync();
 
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
@@ -50,42 +42,30 @@ namespace Reactor.Greenhouse
             Console.WriteLine($"Generating mappings from {oldFile}");
             using var cleanModule = ModuleDefinition.ReadModule(File.OpenRead(oldFile));
 
-            if (!steam && !itch)
+            foreach (var game in gameManager.Games)
             {
-                Console.WriteLine("No game providers used! (use --help for more info)");
-                return;
-            }
-
-            if (steam)
-            {
-                await GenerateAsync(gameManager.Steam, cleanModule);
-            }
-
-            if (itch)
-            {
-                await GenerateAsync(gameManager.Itch, cleanModule);
+                await GenerateAsync(game, cleanModule);
             }
         }
 
         private static async Task GenerateAsync(Game game, ModuleDefinition cleanModule)
         {
-            Console.WriteLine($"Compiling mappings for {game.Name} ({game.Version})");
+            var version = game.Provider.Version;
+            Console.WriteLine($"Compiling mappings for {game.Name} ({version})");
 
             using var moduleDef = ModuleDefinition.ReadModule(File.OpenRead(game.Dll));
-            var version = game.Version;
-            var postfix = game.Postfix;
 
             var generated = Generator.Generate(new GenerationContext(cleanModule, moduleDef));
 
-            await File.WriteAllTextAsync(Path.Combine("work", version + postfix + ".generated.json"), JsonConvert.SerializeObject(generated, Formatting.Indented));
+            await File.WriteAllTextAsync(Path.Combine("work", version + ".generated.json"), JsonConvert.SerializeObject(generated, Formatting.Indented));
 
             Apply(generated, Path.Combine("universal.json"));
-            Apply(generated, Path.Combine(version + postfix + ".json"));
+            Apply(generated, Path.Combine(version + ".json"));
 
             generated.Compile(moduleDef);
 
             Directory.CreateDirectory(Path.Combine("bin"));
-            await File.WriteAllTextAsync(Path.Combine("bin", version + postfix + ".json"), JsonConvert.SerializeObject(generated));
+            await File.WriteAllTextAsync(Path.Combine("bin", version + ".json"), JsonConvert.SerializeObject(generated));
         }
 
         private static void Apply(Mappings generated, string file)

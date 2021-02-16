@@ -12,7 +12,6 @@
         <PackageReference Include="Iced" Version="1.10.0" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
         <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-        <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20574.7" />
         <ProjectReference Include="..\Reactor.OxygenFilter\Reactor.OxygenFilter.csproj" />
         <PackageReference Include="js6pak.Il2CppDumper" Version="6.4.20" />
     </ItemGroup>

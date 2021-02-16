@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using DepotDownloader;
 using Reactor.Greenhouse.Setup.Provider;
@@ -10,58 +11,40 @@ namespace Reactor.Greenhouse.Setup
     {
         public string WorkPath { get; }
 
-        public Game Steam { get; }
-        public Game Itch { get; }
+        public Game[] Games { get; }
 
-        public GameManager()
+        public GameManager(GameVersion[] gameVersions)
         {
             WorkPath = Path.GetFullPath("work");
-            Steam = new Game(new SteamProvider(false), "steam", Path.Combine(WorkPath, "steam"));
-            Itch = new Game(new ItchProvider(), "itch", Path.Combine(WorkPath, "itch"));
+
+            Games = gameVersions.Select(gameVersion => new Game(
+                gameVersion.Platform switch
+                {
+                    GamePlatform.Steam => new SteamProvider(gameVersion),
+                    GamePlatform.Itch => new ItchProvider(gameVersion),
+                    GamePlatform.Android => new AndroidProvider(gameVersion),
+                    _ => throw new ArgumentOutOfRangeException(nameof(gameVersions))
+                }, gameVersion.ToString(), Path.Combine(WorkPath, gameVersion.ToString())
+            )).ToArray();
         }
 
-        public async Task SetupAsync(bool setupSteam, bool setupItch)
+        public async Task SetupAsync()
         {
-            var steam = setupSteam && Steam.Provider.IsUpdateNeeded();
-            var itch = setupItch && Itch.Provider.IsUpdateNeeded();
-
-            if (steam || itch)
+            foreach (var game in Games)
             {
-                ContentDownloader.ShutdownSteam3();
-
-                if (steam)
+                if (game.Provider.IsUpdateNeeded())
                 {
-                    await Steam.DownloadAsync();
-                    Console.WriteLine($"Downloaded {nameof(Steam)} ({Steam.Version})");
-                }
-
-                if (itch)
-                {
-                    await Itch.DownloadAsync();
-                    Console.WriteLine($"Downloaded {nameof(Itch)} ({Itch.Version})");
+                    await game.DownloadAsync();
+                    Console.WriteLine($"Downloaded {game.Provider.Version}");
                 }
             }
 
             ContentDownloader.ShutdownSteam3();
 
-            if (setupSteam)
+            foreach (var game in Games)
             {
-                Steam.UpdateVersion();
-            }
-
-            if (setupItch)
-            {
-                Itch.UpdateVersion();
-            }
-
-            if (setupSteam)
-            {
-                Steam.Dump();
-            }
-
-            if (setupItch)
-            {
-                Itch.Dump();
+                game.CheckVersion();
+                game.Dump();
             }
         }
     }

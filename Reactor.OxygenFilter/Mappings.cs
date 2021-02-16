@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
 using Newtonsoft.Json;
 
 namespace Reactor.OxygenFilter
@@ -186,6 +187,14 @@ namespace Reactor.OxygenFilter
         }
 
         public MappedMethod(OriginalDescriptor original, string mapped) : base(original, mapped)
+        {
+        }
+
+        public MappedMethod(MethodDefinition methodDefinition, string mapped) : base(new OriginalDescriptor
+        {
+            Name = methodDefinition.Name,
+            Signature = methodDefinition.GetSignature()
+        }, mapped)
         {
         }
     }

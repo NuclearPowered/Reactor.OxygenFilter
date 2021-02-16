@@ -102,11 +102,7 @@ namespace Reactor.Greenhouse.Generation
                 {
                     var matched = matching.Single();
 
-                    mappedType.Methods.Add(new MappedMethod(new OriginalDescriptor
-                    {
-                        Name = matched.Name,
-                        Signature = matched.GetSignature()
-                    }, cleanMethod.Name));
+                    mappedType.Methods.Add(new MappedMethod(matched, cleanMethod.Name));
                 }
             }
 
@@ -153,11 +149,7 @@ namespace Reactor.Greenhouse.Generation
 
                     if (methodMatch.Success)
                     {
-                        nested.Methods.Add(new MappedMethod(new OriginalDescriptor
-                        {
-                            Name = nestedMethod.Name,
-                            Signature = nestedMethod.GetSignature()
-                        }, methodMatch.Groups[1].Value));
+                        nested.Methods.Add(new MappedMethod(nestedMethod, methodMatch.Groups[1].Value));
                     }
                 }
 

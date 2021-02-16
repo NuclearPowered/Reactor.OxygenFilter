@@ -13,17 +13,14 @@ namespace Reactor.Greenhouse.Setup
     {
         public BaseProvider Provider { get; }
         public string Name { get; }
-        public char Postfix { get; }
         public string Path { get; }
         public string Dll { get; }
-        public string Version { get; private set; }
 
         public Game(BaseProvider provider, string name, string path)
         {
             Provider = provider;
             provider.Game = this;
             Name = name;
-            Postfix = char.ToLowerInvariant(name[0]);
             Path = path;
             Dll = IOPath.Combine(Path, "DummyDll", "Assembly-CSharp.dll");
         }
@@ -32,23 +29,36 @@ namespace Reactor.Greenhouse.Setup
         {
             Provider.Setup();
             await Provider.DownloadAsync();
-            UpdateVersion();
+            CheckVersion();
         }
 
-        public void UpdateVersion()
+        public void CheckVersion()
         {
-            if (Version != null)
-                return;
+            if (Provider.Version.Platform == GamePlatform.Android)
+            {
+                return; // TODO
+            }
 
-            Version = GameVersionParser.Parse(System.IO.Path.Combine(Path, "Among Us_Data", "globalgamemanagers"));
+            var version = GameVersionParser.Parse(System.IO.Path.Combine(Path, "Among Us_Data", "globalgamemanagers"));
+
+            if (!Provider.Version.Equals(new GameVersion(version), true))
+            {
+                throw new Exception("Downloaded game has invalid version");
+            }
         }
 
         public void Dump()
         {
             Console.WriteLine($"Dumping {Name}");
 
-            var hash = ComputeHash(IOPath.Combine(Path, "GameAssembly.dll"));
-            var hashFile = IOPath.Combine(Path, "Assembly-CSharp.dll.md5");
+            var gameAssembly = Provider.Version.Platform switch
+            {
+                GamePlatform.Android => "libil2cpp.so",
+                _ => "GameAssembly.dll"
+            };
+
+            var hash = ComputeHash(IOPath.Combine(Path, gameAssembly));
+            var hashFile = IOPath.Combine(Path, gameAssembly + ".md5");
 
             if (File.Exists(hashFile) && File.ReadAllText(hashFile) == hash)
             {
@@ -56,7 +66,7 @@ namespace Reactor.Greenhouse.Setup
             }
 
             if (!Il2CppDumper.Il2CppDumper.PerformDump(
-                IOPath.Combine(Path, "GameAssembly.dll"),
+                IOPath.Combine(Path, gameAssembly),
                 IOPath.Combine(Path, "Among Us_Data", "il2cpp_data", "Metadata", "global-metadata.dat"),
                 Path,
                 new Config
