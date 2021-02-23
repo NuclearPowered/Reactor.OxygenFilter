@@ -33,11 +33,20 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var mappings = JsonConvert.DeserializeObject<Mappings>(Context.MappingsJson);
 
-            var resolver = new DefaultAssemblyResolver();
+            var resolver = new AssemblyResolver();
             resolver.AddSearchDirectory(Path.Combine(Context.MappedPath, "references"));
             resolver.AddSearchDirectory(Path.Combine(AmongUs, "BepInEx", "core"));
             resolver.AddSearchDirectory(Path.Combine(AmongUs, "BepInEx", "plugins"));
             resolver.AddSearchDirectory(Path.Combine(AmongUs, "BepInEx", "unhollowed"));
+
+            var readerParameters = new ReaderParameters { AssemblyResolver = resolver };
+
+            // quick fix for reactor plugin having different file name than assembly name
+            resolver.ResolveFailure += (_, reference) =>
+            {
+                var files = Directory.GetFiles(Path.Combine(AmongUs, "BepInEx", "plugins"), $"{reference.Name}-*.dll");
+                return files.Length == 1 ? AssemblyDefinition.ReadAssembly(files.Single(), readerParameters) : null;
+            };
 
             var deobfuscated = new List<string>();
 
@@ -58,7 +67,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
                 using var stream = File.Open(input, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-                using var moduleDefinition = ModuleDefinition.ReadModule(stream, new ReaderParameters { AssemblyResolver = resolver });
+                using var moduleDefinition = ModuleDefinition.ReadModule(stream, readerParameters);
                 var toDeobfuscate = new Dictionary<MemberReference, string>();
 
                 foreach (var type in moduleDefinition.GetTypeReferences())

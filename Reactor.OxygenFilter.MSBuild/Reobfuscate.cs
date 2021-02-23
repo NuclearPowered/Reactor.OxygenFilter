@@ -31,7 +31,7 @@ namespace Reactor.OxygenFilter.MSBuild
         public override bool Execute()
         {
             using var stream = File.Open(Input, FileMode.Open, FileAccess.ReadWrite);
-            var resolver = new DefaultAssemblyResolver();
+            var resolver = new AssemblyResolver();
 
             var obfuscatedAssembly = AssemblyDefinition.ReadAssembly(Path.Combine(AmongUs, "BepInEx", "unhollowed", "Assembly-CSharp.dll"));
 
@@ -41,7 +41,7 @@ namespace Reactor.OxygenFilter.MSBuild
             {
                 foreach (var referencedAssembly in referencedAssemblies)
                 {
-                    if (referencedAssembly.Name.FullName == reference.FullName)
+                    if (referencedAssembly.Name.Name == reference.Name)
                     {
                         return referencedAssembly;
                     }
