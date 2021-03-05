@@ -67,8 +67,10 @@ namespace Reactor.OxygenFilter
                 }
             }
 
-            void MapType(MappedType type, TypeDefinition typeDef)
+            void MapType(MappedType type)
             {
+                var typeDef = ModuleDef.GetType(type.Original.Name);
+
                 if (typeDef == null)
                 {
                     throw new NullReferenceException($"Type {type} was not found!");
@@ -143,11 +145,16 @@ namespace Reactor.OxygenFilter
                         }
                     }
                 }
+
+                foreach (var nestedType in type.Nested)
+                {
+                    MapType(nestedType);
+                }
             }
 
             foreach (var type in Mappings.Types)
             {
-                MapType(type, ModuleDef.GetType(type.Original.Name));
+                MapType(type);
             }
 
             foreach (var typeDef in ModuleDef.Types)

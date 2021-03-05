@@ -134,10 +134,7 @@ namespace Reactor.Greenhouse
                 );
 
                 nested.Compile(nestedDef, mappings);
-                mappings.Types.Add(nested);
             }
-
-            type.Nested.Clear();
 
             foreach (var property in type.Properties)
             {

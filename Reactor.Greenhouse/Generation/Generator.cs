@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using Reactor.OxygenFilter;
 
 namespace Reactor.Greenhouse.Generation
@@ -37,10 +39,22 @@ namespace Reactor.Greenhouse.Generation
 
             Console.WriteLine("LookupTypes took " + lookupTypes);
 
-            foreach (var (obfuscatedType, typeContext) in context.Map)
+            foreach (var (obfuscatedType, typeContext) in context.Map.ToDictionary(k => k.Key, v => v.Value))
             {
-                var mappedType = typeContext.ToMappedType(obfuscatedType);
-                if (mappedType == null)
+                var mappedType = typeContext.ToMappedType(
+                    obfuscatedType,
+                    (obfuscatedNested, cleanNested) =>
+                    {
+                        if (!context.Map.TryGetValue(obfuscatedNested, out var nested))
+                        {
+                            nested = new TypeContext(context, double.MaxValue, cleanNested);
+                            context.Map[obfuscatedNested] = nested;
+                        }
+
+                        return nested;
+                    });
+
+                if (mappedType == null || obfuscatedType.DeclaringType != null)
                     continue;
 
                 result.Types.Add(mappedType);
@@ -225,7 +239,7 @@ namespace Reactor.Greenhouse.Generation
 
         private static void LookupTypes(GenerationContext context)
         {
-            foreach (var cleanType in context.AllCleanTypes)
+            foreach (var cleanType in context.CleanModule.GetAllTypes())
             {
                 if (cleanType.Name.StartsWith("<"))
                     continue;
@@ -233,7 +247,7 @@ namespace Reactor.Greenhouse.Generation
                 TypeDefinition winner = null;
                 var winnerPoints = 0d;
 
-                foreach (var obfuscatedType in context.AllObfuscatedTypes)
+                foreach (var obfuscatedType in context.ObfuscatedModule.GetAllTypes())
                 {
                     if (obfuscatedType.Name.StartsWith("<") && obfuscatedType.Name.EndsWith(">"))
                         continue;

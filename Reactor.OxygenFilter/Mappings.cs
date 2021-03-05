@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Mono.Cecil;
 using Newtonsoft.Json;
 
@@ -17,17 +18,22 @@ namespace Reactor.OxygenFilter
             if (split.Length > 1)
             {
                 MappedType type = null;
+                var current = new StringBuilder();
 
                 foreach (var s in split)
                 {
+                    current.Append(s);
+
                     if (type == null)
                     {
                         type = Find(s, predicate);
                     }
                     else
                     {
-                        type = type.Nested.SingleOrDefault(x => predicate(x) == s);
+                        type = type.Nested.SingleOrDefault(x => predicate(x) == current.ToString());
                     }
+
+                    current.Append('/');
                 }
 
                 return type;

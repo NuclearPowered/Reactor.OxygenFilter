@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -29,14 +30,39 @@ namespace Reactor.Greenhouse.Generation
 
         private static readonly Regex CompilerGeneratedRegex = new Regex(@"^<([\w\d]+)>.__\d+$", RegexOptions.Compiled);
 
-        public MappedType ToMappedType(TypeDefinition obfuscatedType)
+        public MappedType ToMappedType(TypeDefinition obfuscatedType, Func<TypeDefinition, TypeDefinition, TypeContext> nestedFunc)
         {
-            var mappedType = new MappedType(obfuscatedType.FullName, CleanType.Name);
+            var match = CompilerGeneratedRegex.Match(CleanType.Name);
+            var mappedType = new MappedType(obfuscatedType.FullName, match.Success ? (match.Groups[1].Value + "__d") : CleanType.Name.Replace("<>", ""));
 
             for (var i = 0; i < CleanType.Fields.Count; i++)
             {
                 var cleanField = CleanType.Fields[i];
                 var obfuscatedField = obfuscatedType.Fields[i];
+
+                if (obfuscatedType.DeclaringType != null)
+                {
+                    switch (obfuscatedField.Name)
+                    {
+                        case "<>1__state":
+                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__state"));
+                            continue;
+                        case "<>2__current":
+                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__current"));
+                            continue;
+                        case "<>4__this":
+                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__this"));
+                            continue;
+                    }
+
+                    var fieldMatch = CompilerGeneratedRegex.Match(obfuscatedField.Name);
+
+                    if (fieldMatch.Success)
+                    {
+                        mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, fieldMatch.Groups[1].Value));
+                        continue;
+                    }
+                }
 
                 if (!obfuscatedField.Name.IsObfuscated())
                     continue;
@@ -106,6 +132,19 @@ namespace Reactor.Greenhouse.Generation
                 }
             }
 
+            if (obfuscatedType.DeclaringType != null)
+            {
+                foreach (var obfuscatedMethod in obfuscatedType.Methods)
+                {
+                    var methodMatch = CompilerGeneratedRegex.Match(obfuscatedMethod.Name);
+
+                    if (methodMatch.Success)
+                    {
+                        mappedType.Methods.Add(new MappedMethod(obfuscatedMethod, methodMatch.Groups[1].Value));
+                    }
+                }
+            }
+
             for (var i = 0; i < CleanType.NestedTypes.Count; i++)
             {
                 var cleanNested = CleanType.NestedTypes[i];
@@ -116,47 +155,13 @@ namespace Reactor.Greenhouse.Generation
                     break;
                 }
 
-                var match = CompilerGeneratedRegex.Match(cleanNested.Name);
+                var nestedContext = nestedFunc(obfuscatedNested, cleanNested);
+                var mappedNested = nestedContext.ToMappedType(obfuscatedNested, nestedFunc);
 
-                var nested = new MappedType(obfuscatedNested.FullName, match.Success ? (match.Groups[1].Value + "__d") : cleanNested.Name.Replace("<>", ""));
-
-                foreach (var nestedField in obfuscatedNested.Fields)
+                if (mappedNested != null)
                 {
-                    switch (nestedField.Name)
-                    {
-                        case "<>1__state":
-                            nested.Fields.Add(new MappedMember(nestedField.Name, "__state"));
-                            continue;
-                        case "<>2__current":
-                            nested.Fields.Add(new MappedMember(nestedField.Name, "__current"));
-                            continue;
-                        case "<>4__this":
-                            nested.Fields.Add(new MappedMember(nestedField.Name, "__this"));
-                            continue;
-                    }
-
-                    var fieldMatch = CompilerGeneratedRegex.Match(nestedField.Name);
-
-                    if (fieldMatch.Success)
-                    {
-                        nested.Fields.Add(new MappedMember(nestedField.Name, fieldMatch.Groups[1].Value));
-                    }
+                    mappedType.Nested.Add(mappedNested);
                 }
-
-                foreach (var nestedMethod in obfuscatedNested.Methods)
-                {
-                    var methodMatch = CompilerGeneratedRegex.Match(nestedMethod.Name);
-
-                    if (methodMatch.Success)
-                    {
-                        nested.Methods.Add(new MappedMethod(nestedMethod, methodMatch.Groups[1].Value));
-                    }
-                }
-
-                if (!obfuscatedNested.Name.IsObfuscated() && nested.Mapped == cleanNested.Name && !nested.Fields.Any() && !nested.Methods.Any())
-                    continue;
-
-                mappedType.Nested.Add(nested);
             }
 
             if (!obfuscatedType.Name.IsObfuscated() && !mappedType.Fields.Any() && !mappedType.Methods.Any() && !mappedType.Properties.Any() && !mappedType.Nested.Any())
