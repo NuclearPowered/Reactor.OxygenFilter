@@ -10,8 +10,13 @@ namespace Reactor.Greenhouse
 {
     public static class Compiler
     {
-        public static void Apply(this Mappings current, Mappings mappings)
+        public static void Apply(this Mappings current, Mappings mappings, Func<string, Mappings> findMappingsFunc)
         {
+            foreach (var id in mappings.DependsOn)
+            {
+                current.Apply(findMappingsFunc(id), findMappingsFunc);
+            }
+
             static void ApplyType(List<MappedType> types, MappedType newType)
             {
                 var type = types.SingleOrDefault(x => newType.Equals(x));

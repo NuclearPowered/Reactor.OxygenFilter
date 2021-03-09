@@ -15,5 +15,21 @@ namespace Reactor.Greenhouse.Generation
             CleanModule = cleanModule;
             ObfuscatedModule = obfuscatedModule;
         }
+
+        public TypeContext GetOrCreate(TypeDefinition obfuscated, TypeDefinition clean, TypeContext parent = null)
+        {
+            if (!Map.TryGetValue(obfuscated, out var typeContext))
+            {
+                typeContext = new TypeContext(this, double.MaxValue, clean)
+                {
+                    ObfuscatedType = obfuscated,
+                    Declaring = parent
+                };
+
+                Map[obfuscated] = typeContext;
+            }
+
+            return typeContext;
+        }
     }
 }

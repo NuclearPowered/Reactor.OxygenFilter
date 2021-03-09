@@ -14,13 +14,18 @@ namespace Reactor.Greenhouse.Generation
         public double Points { get; }
         public TypeDefinition CleanType { get; }
 
+        public TypeDefinition ObfuscatedType { get; set; }
+
+        public TypeContext Declaring { get; set; }
+        public HashSet<TypeContext> Nested { get; } = new HashSet<TypeContext>();
+
         public string CleanFullName => CleanType.FullName;
 
         public TypeContext(GenerationContext context, double points, TypeDefinition cleanType)
         {
             Context = context;
             Points = points;
-            CleanType = cleanType;
+            CleanType = cleanType ?? throw new ArgumentNullException(nameof(cleanType));
         }
 
         public override string ToString()
@@ -30,65 +35,85 @@ namespace Reactor.Greenhouse.Generation
 
         private static readonly Regex CompilerGeneratedRegex = new Regex(@"^<([\w\d]+)>.__\d+$", RegexOptions.Compiled);
 
-        public MappedType ToMappedType(TypeDefinition obfuscatedType, Func<TypeDefinition, TypeDefinition, TypeContext> nestedFunc)
+        public void UpdateNested()
+        {
+            if (ObfuscatedType.NestedTypes.Count == CleanType.NestedTypes.Count)
+            {
+                for (var i = 0; i < CleanType.NestedTypes.Count; i++)
+                {
+                    var cleanNested = CleanType.NestedTypes[i];
+                    var obfuscatedNested = ObfuscatedType.NestedTypes[i];
+
+                    Nested.Add(Context.GetOrCreate(obfuscatedNested, cleanNested, this));
+                }
+            }
+        }
+
+        public MappedType ToMappedType()
         {
             var match = CompilerGeneratedRegex.Match(CleanType.Name);
-            var mappedType = new MappedType(obfuscatedType.FullName, match.Success ? (match.Groups[1].Value + "__d") : CleanType.Name.Replace("<>", ""));
+            var mappedType = new MappedType(ObfuscatedType.FullName, match.Success ? (match.Groups[1].Value + "__d") : CleanType.Name.Replace("<>", ""));
 
-            for (var i = 0; i < CleanType.Fields.Count; i++)
+            if (ObfuscatedType.Fields.Count == CleanType.Fields.Count)
             {
-                var cleanField = CleanType.Fields[i];
-                var obfuscatedField = obfuscatedType.Fields[i];
-
-                if (obfuscatedType.DeclaringType != null)
+                for (var i = 0; i < CleanType.Fields.Count; i++)
                 {
-                    switch (obfuscatedField.Name)
+                    var cleanField = CleanType.Fields[i];
+                    var obfuscatedField = ObfuscatedType.Fields[i];
+
+                    if (ObfuscatedType.DeclaringType != null)
                     {
-                        case "<>1__state":
-                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__state"));
+                        switch (obfuscatedField.Name)
+                        {
+                            case "<>1__state":
+                                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__state"));
+                                continue;
+                            case "<>2__current":
+                                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__current"));
+                                continue;
+                            case "<>4__this":
+                                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__this"));
+                                continue;
+                        }
+
+                        var fieldMatch = CompilerGeneratedRegex.Match(obfuscatedField.Name);
+
+                        if (fieldMatch.Success)
+                        {
+                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, fieldMatch.Groups[1].Value));
                             continue;
-                        case "<>2__current":
-                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__current"));
-                            continue;
-                        case "<>4__this":
-                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__this"));
-                            continue;
+                        }
                     }
 
-                    var fieldMatch = CompilerGeneratedRegex.Match(obfuscatedField.Name);
-
-                    if (fieldMatch.Success)
-                    {
-                        mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, fieldMatch.Groups[1].Value));
+                    if (!obfuscatedField.Name.IsObfuscated())
                         continue;
-                    }
+
+                    mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, cleanField.Name));
                 }
-
-                if (!obfuscatedField.Name.IsObfuscated())
-                    continue;
-
-                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, cleanField.Name));
             }
 
-            for (var i = 0; i < CleanType.Properties.Count; i++)
+            if (ObfuscatedType.Properties.Count == CleanType.Properties.Count)
             {
-                var cleanProperty = CleanType.Properties[i];
-                var obfuscatedProperty = obfuscatedType.Properties[i];
+                for (var i = 0; i < CleanType.Properties.Count; i++)
+                {
+                    var cleanProperty = CleanType.Properties[i];
+                    var obfuscatedProperty = ObfuscatedType.Properties[i];
 
-                if (!obfuscatedProperty.Name.IsObfuscated())
-                    continue;
+                    if (!obfuscatedProperty.Name.IsObfuscated())
+                        continue;
 
-                mappedType.Properties.Add(new MappedMember(obfuscatedProperty.Name, cleanProperty.Name));
+                    mappedType.Properties.Add(new MappedMember(obfuscatedProperty.Name, cleanProperty.Name));
+                }
             }
 
             foreach (var cleanMethod in CleanType.GetMethods())
             {
-                if (obfuscatedType.GetMethods().Any(x => x.Name == cleanMethod.Name))
+                if (ObfuscatedType.GetMethods().Any(x => x.Name == cleanMethod.Name))
                     continue;
 
                 var matching = new List<MethodDefinition>();
 
-                foreach (var obfuscatedMethod in obfuscatedType.GetMethods().Where(x => x.Name.IsObfuscated()))
+                foreach (var obfuscatedMethod in ObfuscatedType.GetMethods().Where(x => x.Name.IsObfuscated()))
                 {
                     if (cleanMethod.ReturnType.FullName != obfuscatedMethod.ReturnType.FullName)
                         continue;
@@ -132,9 +157,9 @@ namespace Reactor.Greenhouse.Generation
                 }
             }
 
-            if (obfuscatedType.DeclaringType != null)
+            if (ObfuscatedType.DeclaringType != null)
             {
-                foreach (var obfuscatedMethod in obfuscatedType.Methods)
+                foreach (var obfuscatedMethod in ObfuscatedType.Methods)
                 {
                     var methodMatch = CompilerGeneratedRegex.Match(obfuscatedMethod.Name);
 
@@ -145,26 +170,16 @@ namespace Reactor.Greenhouse.Generation
                 }
             }
 
-            for (var i = 0; i < CleanType.NestedTypes.Count; i++)
+            foreach (var nestedTypeContext in Nested)
             {
-                var cleanNested = CleanType.NestedTypes[i];
-                var obfuscatedNested = obfuscatedType.NestedTypes[i];
-
-                if (cleanNested.Fields.Count != obfuscatedNested.Fields.Count)
+                var nestedType = nestedTypeContext.ToMappedType();
+                if (nestedType != null)
                 {
-                    break;
-                }
-
-                var nestedContext = nestedFunc(obfuscatedNested, cleanNested);
-                var mappedNested = nestedContext.ToMappedType(obfuscatedNested, nestedFunc);
-
-                if (mappedNested != null)
-                {
-                    mappedType.Nested.Add(mappedNested);
+                    mappedType.Nested.Add(nestedType);
                 }
             }
 
-            if (!obfuscatedType.Name.IsObfuscated() && !mappedType.Fields.Any() && !mappedType.Methods.Any() && !mappedType.Properties.Any() && !mappedType.Nested.Any())
+            if (!ObfuscatedType.Name.IsObfuscated() && !mappedType.Fields.Any() && !mappedType.Methods.Any() && !mappedType.Properties.Any() && !mappedType.Nested.Any())
                 return null;
 
             return mappedType;

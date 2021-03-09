@@ -10,7 +10,8 @@ namespace Reactor.Greenhouse.Setup.Provider
     {
         private Dictionary<GameVersion, string> VersionMap { get; } = new Dictionary<GameVersion, string>
         {
-            [new GameVersion("2020.11.17a")] = "https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=1753109"
+            [new GameVersion("2020.11.17a")] = "https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=1753109",
+            [new GameVersion("2021.3.5a")] = "https://www.apkmirror.com/wp-content/themes/APKMirror/download.php?id=2032358&forcebaseapk"
         };
 
         public string DownloadUrl { get; }

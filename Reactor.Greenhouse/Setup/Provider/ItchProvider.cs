@@ -16,16 +16,8 @@ namespace Reactor.Greenhouse.Setup.Provider
 {
     public class ItchProvider : BaseProvider
     {
-        private Dictionary<GameVersion, int> VersionMap { get; } = new Dictionary<GameVersion, int>
-        {
-            [new GameVersion("2020.11.17i")] = 1047908,
-        };
-
-        public int UploadId { get; }
-
         public ItchProvider(GameVersion version) : base(version)
         {
-            UploadId = VersionMap[version];
         }
 
         private HttpClient HttpClient { get; } = new HttpClient(new HttpClientHandler
@@ -57,6 +49,7 @@ namespace Reactor.Greenhouse.Setup.Provider
             }
         }
 
+        // TODO butlerd and multi version support?
         public override async Task DownloadAsync()
         {
             var htmlParser = new HtmlParser();
@@ -83,7 +76,7 @@ namespace Reactor.Greenhouse.Setup.Provider
             var downloadPageUrl = ((IHtmlAnchorElement) pageDocument.QuerySelector("a[class=button]")).Href;
 
             var downloadDocument = htmlParser.ParseDocument(await HttpClient.GetStringAsync(downloadPageUrl));
-            // var uploadId = ((IHtmlAnchorElement) downloadDocument.QuerySelector("a[class='button download_btn']")).Dataset["upload_id"];
+            var uploadId = ((IHtmlAnchorElement) downloadDocument.QuerySelector("a[class='button download_btn']")).Dataset["upload_id"];
 
             var keyRegex = new Regex("key\":\"(.+)\",");
             var key = downloadDocument.QuerySelectorAll("script[type='text/javascript']")
@@ -92,7 +85,7 @@ namespace Reactor.Greenhouse.Setup.Provider
                 .Single(x => x.Success)
                 .Groups[1].Value;
 
-            var json = await HttpClient.PostAsync($"https://innersloth.itch.io/among-us/file/{UploadId}?key={key}", null);
+            var json = await HttpClient.PostAsync($"https://innersloth.itch.io/among-us/file/{uploadId}?key={key}", null);
             var response = JsonConvert.DeserializeObject<DownloadResponse>(await json.Content.ReadAsStringAsync());
 
             Console.WriteLine($"Downloading {response.Url}");

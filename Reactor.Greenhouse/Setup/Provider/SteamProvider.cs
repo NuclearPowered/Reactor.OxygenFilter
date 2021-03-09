@@ -15,7 +15,8 @@ namespace Reactor.Greenhouse.Setup.Provider
         private Dictionary<GameVersion, ulong> VersionMap { get; } = new Dictionary<GameVersion, ulong>
         {
             [new GameVersion("2019.10.10s")] = 3162069540887216240,
-            [new GameVersion("2020.12.9s")] = 3306639722673334636
+            [new GameVersion("2020.12.9s")] = 3306639722673334636,
+            [new GameVersion("2021.3.5s")] = 5200448423569257054
         };
 
         public ulong Manifest { get; }

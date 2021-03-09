@@ -187,11 +187,6 @@ namespace Reactor.OxygenFilter
 
                 foreach (var member in typeDef.Methods)
                 {
-                    if (member.Name.IsObfuscated() && member.CustomAttributes.All(x => x.AttributeType != mappedAttribute))
-                    {
-                        MapMember(member, $"Method_{i}");
-                    }
-
                     var j = 0;
                     foreach (var parameter in member.Parameters)
                     {

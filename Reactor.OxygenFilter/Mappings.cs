@@ -9,6 +9,13 @@ namespace Reactor.OxygenFilter
 {
     public class Mappings
     {
+        public const int CurrentVersion = 1;
+
+        public int Version { get; set; }
+        public string GameVersion { get; set; }
+
+        public string[] DependsOn { get; set; } = new string[0];
+
         public List<MappedType> Types { get; set; } = new List<MappedType>();
 
         public MappedType Find(string name, Func<MappedType, string> predicate)

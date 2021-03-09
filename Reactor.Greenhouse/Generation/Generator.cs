@@ -41,20 +41,37 @@ namespace Reactor.Greenhouse.Generation
 
             foreach (var (obfuscatedType, typeContext) in context.Map.ToDictionary(k => k.Key, v => v.Value))
             {
-                var mappedType = typeContext.ToMappedType(
-                    obfuscatedType,
-                    (obfuscatedNested, cleanNested) =>
+                if (obfuscatedType.DeclaringType != null)
+                {
+                    var existingParent = context.Map.SingleOrDefault(x => x.Value.CleanType == typeContext.CleanType.DeclaringType).Key;
+
+                    if (existingParent != null && existingParent != obfuscatedType.DeclaringType)
                     {
-                        if (!context.Map.TryGetValue(obfuscatedNested, out var nested))
-                        {
-                            nested = new TypeContext(context, double.MaxValue, cleanNested);
-                            context.Map[obfuscatedNested] = nested;
-                        }
+                        context.Map.Remove(obfuscatedType);
+                        continue;
+                    }
+                }
 
-                        return nested;
-                    });
+                typeContext.ObfuscatedType = obfuscatedType;
+                typeContext.UpdateNested();
 
-                if (mappedType == null || obfuscatedType.DeclaringType != null)
+                if (obfuscatedType.DeclaringType != null)
+                {
+                    var declaring = context.GetOrCreate(obfuscatedType.DeclaringType, typeContext.CleanType.DeclaringType);
+                    declaring.Nested.Add(typeContext);
+                }
+            }
+
+            foreach (var (obfuscatedType, typeContext) in context.Map)
+            {
+                if (obfuscatedType.DeclaringType != null)
+                {
+                    continue;
+                }
+
+                var mappedType = typeContext.ToMappedType();
+
+                if (mappedType == null)
                     continue;
 
                 result.Types.Add(mappedType);
@@ -63,38 +80,40 @@ namespace Reactor.Greenhouse.Generation
             return result;
         }
 
-        private static bool TestEnum(TypeDefinition cleanType, TypeDefinition obfuscatedType)
+        private static double TestEnum(TypeDefinition cleanType, TypeDefinition obfuscatedType)
         {
             if (!obfuscatedType.IsEnum)
-                return false;
+                return 0;
 
-            if (cleanType.Fields.Count != obfuscatedType.Fields.Count)
-                return false;
+            var points = 0d;
 
             for (var i = 0; i < cleanType.Fields.Count; i++)
             {
                 var cleanField = cleanType.Fields[i];
+                if (i >= obfuscatedType.Fields.Count)
+                    break;
+
                 var obfuscatedField = obfuscatedType.Fields[i];
 
-                if (cleanField.Name != obfuscatedField.Name)
+                if (cleanField.Name == obfuscatedField.Name)
                 {
-                    return false;
+                    points++;
                 }
 
-                if (cleanField.HasConstant && !cleanField.Constant.Equals(obfuscatedField.Constant))
+                if (cleanField.HasConstant && cleanField.Constant.Equals(obfuscatedField.Constant))
                 {
-                    return false;
+                    points++;
                 }
             }
 
-            return true;
+            return points;
         }
 
         private static double TestField(FieldDefinition cleanField, FieldDefinition obfuscatedField)
         {
             var points = 0d;
 
-            if (cleanField.Attributes.IgnoreVisibility() != obfuscatedField.Attributes.IgnoreVisibility())
+            if (cleanField.Attributes != obfuscatedField.Attributes)
             {
                 points -= 1;
             }
@@ -170,12 +189,18 @@ namespace Reactor.Greenhouse.Generation
             if (cleanType.Name.StartsWith("<"))
                 return 0;
 
-            if (cleanType.Attributes.IgnoreVisibility() != obfuscatedType.Attributes.IgnoreVisibility())
+            if (cleanType.Attributes != obfuscatedType.Attributes)
                 return 0;
+
+            if (cleanType.DeclaringType != null && obfuscatedType.DeclaringType == null)
+                return 0;
+
+            if (cleanType.FullName == obfuscatedType.FullName)
+                return double.MaxValue;
 
             if (cleanType.IsEnum)
             {
-                return TestEnum(cleanType, obfuscatedType) ? double.MaxValue : 0;
+                return TestEnum(cleanType, obfuscatedType);
             }
 
             if (cleanType.BaseType != null && obfuscatedType.BaseType != null && cleanType.BaseType.FullName != obfuscatedType.BaseType.FullName)
@@ -187,12 +212,6 @@ namespace Reactor.Greenhouse.Generation
             }
 
             var points = 0d;
-
-            // this will only work with up to date mono dll (:fortelove:)
-            if (obfuscatedType.Fields.Count != cleanType.Fields.Count || obfuscatedType.Properties.Count != cleanType.Properties.Count || obfuscatedType.NestedTypes.Count != cleanType.NestedTypes.Count)
-            {
-                return 0;
-            }
 
             for (var i = 0; i < cleanType.Fields.Count; i++)
             {
@@ -250,6 +269,9 @@ namespace Reactor.Greenhouse.Generation
                 foreach (var obfuscatedType in context.ObfuscatedModule.GetAllTypes())
                 {
                     if (obfuscatedType.Name.StartsWith("<") && obfuscatedType.Name.EndsWith(">"))
+                        continue;
+
+                    if (obfuscatedType.FullName.StartsWith("Rewired"))
                         continue;
 
                     var points = TestType(cleanType, obfuscatedType);

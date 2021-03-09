@@ -56,11 +56,14 @@ namespace Reactor.Greenhouse
             using var moduleDef = ModuleDefinition.ReadModule(File.OpenRead(game.Dll));
 
             var generated = Generator.Generate(new GenerationContext(cleanModule, moduleDef));
+            generated.GameVersion = version.ToString();
+            generated.Version = Mappings.CurrentVersion;
 
             await File.WriteAllTextAsync(Path.Combine("work", version + ".generated.json"), JsonConvert.SerializeObject(generated, Formatting.Indented));
 
-            Apply(generated, Path.Combine("universal.json"));
-            Apply(generated, Path.Combine(version + ".json"));
+            var mappings = Read(version.ToString());
+
+            generated.Apply(mappings, Read);
 
             generated.Compile(moduleDef);
 
@@ -68,13 +71,9 @@ namespace Reactor.Greenhouse
             await File.WriteAllTextAsync(Path.Combine("bin", version + ".json"), JsonConvert.SerializeObject(generated));
         }
 
-        private static void Apply(Mappings generated, string file)
+        private static Mappings Read(string file)
         {
-            if (File.Exists(file))
-            {
-                var mappings = JsonConvert.DeserializeObject<Mappings>(File.ReadAllText(file));
-                generated.Apply(mappings);
-            }
+            return JsonConvert.DeserializeObject<Mappings>(File.ReadAllText(file + ".json"));
         }
 
         public class ShouldSerializeContractResolver : CamelCasePropertyNamesContractResolver
