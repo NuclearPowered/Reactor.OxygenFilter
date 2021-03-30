@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -7,8 +8,11 @@ namespace Reactor.OxygenFilter.MSBuild
 {
     public static class Context
     {
-        // Path#Combine is borken on visual studio
-        public static string RootPath { get; } = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + Path.DirectorySeparatorChar + ".reactor";
+        public static string RootPath { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            ? Path.Combine(Environment.GetEnvironmentVariable("XDG_CACHE_HOME") ?? Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? ".", ".cache"), ".reactor")
+            // Path#Combine is borken on visual studio
+            : Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + Path.DirectorySeparatorChar + ".reactor";
+
         public static string TempPath { get; } = Path.Combine(RootPath, "tmp");
         public static string DataPath => RootPath + Path.DirectorySeparatorChar + GameVersion;
         public static string MappedPath => DataPath + Path.DirectorySeparatorChar + ComputeHash(MappingsJson);
