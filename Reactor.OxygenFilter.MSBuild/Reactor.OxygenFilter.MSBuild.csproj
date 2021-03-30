@@ -4,13 +4,16 @@
         <LangVersion>latest</LangVersion>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
-        <Version>0.2.9</Version>
+        <Version>0.2.10</Version>
         <RepositoryType>git</RepositoryType>
         <RepositoryUrl>https://github.com/NuclearPowered/Reactor.OxygenFilter</RepositoryUrl>
         <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
         <Description>Library for using Reactor.OxygenFilter with msbuild</Description>
-        <DevelopmentDependency>true</DevelopmentDependency>
+
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <DebugType>embedded</DebugType>
     </PropertyGroup>
 
     <ItemGroup>

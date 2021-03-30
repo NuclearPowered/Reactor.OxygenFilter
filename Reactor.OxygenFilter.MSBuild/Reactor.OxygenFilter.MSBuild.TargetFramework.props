@@ -39,11 +39,17 @@
         </GenerateReferences>
 
         <ItemGroup>
-            <Reference Include="$(ReferencesPath)\*.dll" />
+            <Reference Include="$(ReferencesPath)\*.dll">
+                <Private>false</Private>
+            </Reference>
 
-            <Reference Include="$(AmongUs)\BepInEx\unhollowed\*.dll" />
+            <Reference Include="$(AmongUs)\BepInEx\unhollowed\*.dll">
+                <Private>false</Private>
+            </Reference>
             <Reference Remove="$(AmongUs)\BepInEx\unhollowed\netstandard.dll;$(AmongUs)\BepInEx\unhollowed\Assembly-CSharp.dll" />
-            <Reference Include="$(AmongUs)\BepInEx\core\*.dll" />
+            <Reference Include="$(AmongUs)\BepInEx\core\*.dll">
+                <Private>false</Private>
+            </Reference>
         </ItemGroup>
     </Target>
 
