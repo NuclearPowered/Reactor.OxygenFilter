@@ -16,7 +16,9 @@ namespace Reactor.Greenhouse.Setup.Provider
         {
             [new GameVersion("2019.10.10s")] = 3162069540887216240,
             [new GameVersion("2020.12.9s")] = 3306639722673334636,
-            [new GameVersion("2021.3.5s")] = 5200448423569257054
+            [new GameVersion("2021.3.5s")] = 5200448423569257054,
+            [new GameVersion("2021.3.31s")] = 9177722260012976528,
+            [new GameVersion("2021.3.31.3s")] = 3941730972865408291
         };
 
         public ulong Manifest { get; }

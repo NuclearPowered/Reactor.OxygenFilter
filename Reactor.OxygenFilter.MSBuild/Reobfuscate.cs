@@ -282,7 +282,16 @@ namespace Reactor.OxygenFilter.MSBuild
 
             foreach (var pair in toObfuscate)
             {
-                pair.Key.Name = pair.Value;
+                if (pair.Key is TypeReference typeReference)
+                {
+                    var lastIndexOf = pair.Value.LastIndexOf('.');
+                    typeReference.Namespace = lastIndexOf == -1 ? null : pair.Value.Substring(0, lastIndexOf);
+                    typeReference.Name = pair.Value.Substring(lastIndexOf + 1);
+                }
+                else
+                {
+                    pair.Key.Name = pair.Value;
+                }
             }
 
             foreach (var typeReference in moduleDefinition.GetTypeReferences())

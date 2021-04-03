@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using Reactor.OxygenFilter;
@@ -33,8 +32,6 @@ namespace Reactor.Greenhouse.Generation
             return CleanFullName;
         }
 
-        private static readonly Regex CompilerGeneratedRegex = new Regex(@"^<([\w\d]+)>.__\d+$", RegexOptions.Compiled);
-
         public void UpdateNested()
         {
             if (ObfuscatedType.NestedTypes.Count == CleanType.NestedTypes.Count)
@@ -49,16 +46,32 @@ namespace Reactor.Greenhouse.Generation
             }
         }
 
+        private static string Clean(string name)
+        {
+            return name.Replace("<", "_").Replace(">", "_");
+        }
+
         public MappedType ToMappedType()
         {
-            var match = CompilerGeneratedRegex.Match(CleanType.Name);
-            var mappedType = new MappedType(ObfuscatedType.FullName, match.Success ? (match.Groups[1].Value + "__d") : CleanType.Name.Replace("<>", ""));
+            var mappedType = new MappedType(ObfuscatedType.FullName, Clean(CleanType.Name));
+
+            if (!string.IsNullOrEmpty(CleanType.Namespace))
+            {
+                mappedType.Mapped = CleanType.Namespace + "." + mappedType.Mapped;
+            }
+
+            if (ObfuscatedType.FullName == CleanFullName)
+            {
+                mappedType.Mapped = null;
+            }
 
             if (ObfuscatedType.Fields.Count == CleanType.Fields.Count)
             {
+                var sortedCleanFields = CleanType.Fields.OrderBy(x => x.HasConstant && x.Constant is string).ToArray();
+
                 for (var i = 0; i < CleanType.Fields.Count; i++)
                 {
-                    var cleanField = CleanType.Fields[i];
+                    var cleanField = sortedCleanFields[i];
                     var obfuscatedField = ObfuscatedType.Fields[i];
 
                     if (ObfuscatedType.DeclaringType != null)
@@ -76,11 +89,11 @@ namespace Reactor.Greenhouse.Generation
                                 continue;
                         }
 
-                        var fieldMatch = CompilerGeneratedRegex.Match(obfuscatedField.Name);
+                        var clean = Clean(obfuscatedField.Name);
 
-                        if (fieldMatch.Success)
+                        if (clean != obfuscatedField.Name)
                         {
-                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, fieldMatch.Groups[1].Value));
+                            mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, clean));
                             continue;
                         }
                     }
@@ -161,11 +174,11 @@ namespace Reactor.Greenhouse.Generation
             {
                 foreach (var obfuscatedMethod in ObfuscatedType.Methods)
                 {
-                    var methodMatch = CompilerGeneratedRegex.Match(obfuscatedMethod.Name);
+                    var clean = Clean(obfuscatedMethod.Name);
 
-                    if (methodMatch.Success)
+                    if (clean != obfuscatedMethod.Name)
                     {
-                        mappedType.Methods.Add(new MappedMethod(obfuscatedMethod, methodMatch.Groups[1].Value));
+                        mappedType.Methods.Add(new MappedMethod(obfuscatedMethod, clean));
                     }
                 }
             }

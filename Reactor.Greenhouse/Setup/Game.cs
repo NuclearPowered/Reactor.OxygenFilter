@@ -39,12 +39,13 @@ namespace Reactor.Greenhouse.Setup
                 return; // TODO
             }
 
-            var version = GameVersionParser.Parse(System.IO.Path.Combine(Path, "Among Us_Data", "globalgamemanagers"));
+            // TODO version patch is hardcoded to version shower, wtf!?
+            // var version = GameVersionParser.Parse(System.IO.Path.Combine(Path, "Among Us_Data", "globalgamemanagers"));
 
-            if (!Provider.Version.Equals(new GameVersion(version), true))
-            {
-                throw new Exception("Downloaded game has invalid version");
-            }
+            // if (!Provider.Version.Equals(new GameVersion(version), true))
+            // {
+            //     throw new Exception("Downloaded game has invalid version");
+            // }
         }
 
         public void Dump()
@@ -71,10 +72,8 @@ namespace Reactor.Greenhouse.Setup
                 Path,
                 new Config
                 {
-                    RequireAnyKey = false,
-                    GenerateScript = false,
-                    DumpProperty = true,
-                    DumpAttribute = true
+                    GenerateStruct = false,
+                    GenerateDummyDll = true
                 },
                 Console.WriteLine
             ))

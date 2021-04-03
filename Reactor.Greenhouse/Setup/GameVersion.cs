@@ -5,7 +5,7 @@ namespace Reactor.Greenhouse.Setup
 {
     public class GameVersion
     {
-        private static readonly Regex _regex = new Regex(@"^(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)(?<platform>[sia])?", RegexOptions.Compiled);
+        private static readonly Regex _regex = new Regex(@"^(?<year>[0-9]+)\.(?<month>[0-9]+)\.(?<day>[0-9]+)(\.(?<patch>[0-9]+))?(?<platform>[sia])?", RegexOptions.Compiled);
 
         public static GamePlatform GamePlatformFromShorthand(string shorthand)
         {
@@ -18,8 +18,9 @@ namespace Reactor.Greenhouse.Setup
             };
         }
 
-        public int Major { get; }
-        public int Minor { get; }
+        public int Year { get; }
+        public int Month { get; }
+        public int Day { get; }
         public int Patch { get; }
         public GamePlatform? Platform { get; }
 
@@ -27,9 +28,10 @@ namespace Reactor.Greenhouse.Setup
         {
             var match = _regex.Match(version);
 
-            Major = int.Parse(match.Groups["major"].Value);
-            Minor = int.Parse(match.Groups["minor"].Value);
-            Patch = int.Parse(match.Groups["patch"].Value);
+            Year = int.Parse(match.Groups["year"].Value);
+            Month = int.Parse(match.Groups["month"].Value);
+            Day = int.Parse(match.Groups["day"].Value);
+            Patch = match.Groups["patch"].Success ? int.Parse(match.Groups["patch"].Value) : 0;
 
             var platform = match.Groups["platform"];
             Platform = platform.Success && !string.IsNullOrEmpty(platform.Value) ? GamePlatformFromShorthand(platform.Value) : null;
@@ -37,7 +39,7 @@ namespace Reactor.Greenhouse.Setup
 
         public override string ToString()
         {
-            return $"{Major}.{Minor}.{Patch}" + Platform switch
+            return $"{Year}.{Month}.{Day}{(Patch == 0 ? string.Empty : $".{Patch}")}" + Platform switch
             {
                 GamePlatform.Steam => "s",
                 GamePlatform.Itch => "i",
@@ -52,7 +54,7 @@ namespace Reactor.Greenhouse.Setup
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
 
-            return Major == other.Major && Minor == other.Minor && Patch == other.Patch && (ignorePlatform || Platform == other.Platform);
+            return Year == other.Year && Month == other.Month && Day == other.Day && Patch == other.Patch && (ignorePlatform || Platform == other.Platform);
         }
 
         public override bool Equals(object obj)
@@ -62,7 +64,7 @@ namespace Reactor.Greenhouse.Setup
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Major, Minor, Patch, Platform);
+            return HashCode.Combine(Year, Month, Day, Patch, Platform);
         }
     }
 

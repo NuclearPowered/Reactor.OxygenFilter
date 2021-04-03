@@ -47,7 +47,7 @@ namespace Reactor.OxygenFilter.MSBuild
 
             var dumperConfig = new Il2CppDumper.Config
             {
-                GenerateScript = false,
+                GenerateStruct = false,
                 GenerateDummyDll = true
             };
 

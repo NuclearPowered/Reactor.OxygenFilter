@@ -38,7 +38,7 @@ namespace Reactor.Greenhouse
                 ContractResolver = ShouldSerializeContractResolver.Instance,
             };
 
-            var oldFile = Path.Combine("work", "Assembly-CSharp-2020.12.9s.dll");
+            var oldFile = Path.Combine("work", "Assembly-CSharp-2021.3.31.dll");
             Console.WriteLine($"Generating mappings from {oldFile}");
             using var cleanModule = ModuleDefinition.ReadModule(File.OpenRead(oldFile));
 
