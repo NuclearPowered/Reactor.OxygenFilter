@@ -44,5 +44,16 @@ namespace Reactor.Greenhouse
             Directory.GetParent(destinationFileName)!.Create();
             source.ExtractToFile(destinationFileName, true);
         }
+
+        public static string Clean(this string name)
+        {
+            return name switch
+            {
+                "<>1__state" => "__state",
+                "<>2__current" => "__current",
+                "<>4__this" => "__this",
+                _ => name.Replace("<", "_").Replace(">", "_")
+            };
+        }
     }
 }

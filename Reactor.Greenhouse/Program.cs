@@ -55,13 +55,25 @@ namespace Reactor.Greenhouse
 
             using var moduleDef = ModuleDefinition.ReadModule(File.OpenRead(game.Dll));
 
-            var generated = Generator.Generate(new GenerationContext(cleanModule, moduleDef));
-            generated.GameVersion = version.ToString();
-            generated.Version = Mappings.CurrentVersion;
+            var mappings = Read(version.ToString());
+
+            var generated = new Mappings
+            {
+                GameVersion = version.ToString(),
+                Version = Mappings.CurrentVersion
+            };
+
+            if (mappings.Beebyte != null)
+            {
+                BeebyteMappings.Parse(await File.ReadAllLinesAsync(mappings.Beebyte)).Compile(generated, moduleDef);
+            }
+
+            if (mappings.UseGenerator)
+            {
+                Generator.Generate(generated, new GenerationContext(cleanModule, moduleDef));
+            }
 
             await File.WriteAllTextAsync(Path.Combine("work", version + ".generated.json"), JsonConvert.SerializeObject(generated, Formatting.Indented));
-
-            var mappings = Read(version.ToString());
 
             generated.Apply(mappings, Read);
 

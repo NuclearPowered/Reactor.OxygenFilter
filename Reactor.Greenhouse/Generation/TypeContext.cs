@@ -46,14 +46,9 @@ namespace Reactor.Greenhouse.Generation
             }
         }
 
-        private static string Clean(string name)
-        {
-            return name.Replace("<", "_").Replace(">", "_");
-        }
-
         public MappedType ToMappedType()
         {
-            var mappedType = new MappedType(ObfuscatedType.FullName, Clean(CleanType.Name));
+            var mappedType = new MappedType(ObfuscatedType.FullName, CleanType.Name.Clean());
 
             if (!string.IsNullOrEmpty(CleanType.Namespace))
             {
@@ -76,20 +71,7 @@ namespace Reactor.Greenhouse.Generation
 
                     if (ObfuscatedType.DeclaringType != null)
                     {
-                        switch (obfuscatedField.Name)
-                        {
-                            case "<>1__state":
-                                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__state"));
-                                continue;
-                            case "<>2__current":
-                                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__current"));
-                                continue;
-                            case "<>4__this":
-                                mappedType.Fields.Add(new MappedMember(obfuscatedField.Name, "__this"));
-                                continue;
-                        }
-
-                        var clean = Clean(obfuscatedField.Name);
+                        var clean = obfuscatedField.Name.Clean();
 
                         if (clean != obfuscatedField.Name)
                         {
@@ -174,7 +156,7 @@ namespace Reactor.Greenhouse.Generation
             {
                 foreach (var obfuscatedMethod in ObfuscatedType.Methods)
                 {
-                    var clean = Clean(obfuscatedMethod.Name);
+                    var clean = obfuscatedMethod.Name.Clean();
 
                     if (clean != obfuscatedMethod.Name)
                     {

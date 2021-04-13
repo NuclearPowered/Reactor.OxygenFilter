@@ -16,6 +16,10 @@ namespace Reactor.OxygenFilter
 
         public string[] DependsOn { get; set; } = new string[0];
 
+        public string Beebyte { get; set; } = null;
+
+        public bool UseGenerator { get; set; } = false;
+
         public List<MappedType> Types { get; set; } = new List<MappedType>();
 
         public MappedType Find(string name, Func<MappedType, string> predicate)

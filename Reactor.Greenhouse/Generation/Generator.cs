@@ -28,10 +28,8 @@ namespace Reactor.Greenhouse.Generation
             return scope.Name != "Assembly-CSharp.dll";
         }
 
-        public static Mappings Generate(GenerationContext context)
+        public static void Generate(Mappings result, GenerationContext context)
         {
-            var result = new Mappings();
-
             var lookupTypes = Extensions.Time(() =>
             {
                 LookupTypes(context);
@@ -76,8 +74,6 @@ namespace Reactor.Greenhouse.Generation
 
                 result.Types.Add(mappedType);
             }
-
-            return result;
         }
 
         private static double TestEnum(TypeDefinition cleanType, TypeDefinition obfuscatedType)
